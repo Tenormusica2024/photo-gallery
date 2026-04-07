@@ -55,11 +55,10 @@ create index if not exists idx_family_groups_invite on public.family_groups(invi
 -- RLS for family_groups
 alter table public.family_groups enable row level security;
 
-create policy "Family groups visible to members" on public.family_groups
+-- 認証済みユーザーはファミリーグループを閲覧可能（招待コードでの検索を許可するため）
+create policy "Family groups visible to authenticated users" on public.family_groups
   for select to authenticated
-  using (
-    id in (select family_id from public.family_members where user_id = auth.uid())
-  );
+  using (true);
 
 create policy "Authenticated users can create family groups" on public.family_groups
   for insert to authenticated

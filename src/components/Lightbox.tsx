@@ -34,10 +34,12 @@ export default function Lightbox({ photos, currentIndex, onClose, onNavigate }: 
     };
   }, [handleKeyDown]);
 
-  // ダウンロードリンクを新規タブで開く（Supabase Storage公開URLなのでそのまま使用可能）
+  // Cloudinary URLにfl_attachmentを付与してブラウザダウンロードを強制
   function handleDownload() {
+    const url = new URL(photo.url);
+    url.searchParams.set("fl_attachment", photo.title || (isVideo ? "動画" : "写真"));
     const a = document.createElement("a");
-    a.href = photo.url;
+    a.href = url.toString();
     a.download = photo.title || (isVideo ? "動画" : "写真");
     a.target = "_blank";
     a.rel = "noopener noreferrer";

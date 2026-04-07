@@ -24,7 +24,7 @@ const DEMO_PHOTOS: Photo[] = [
 
 export default function GalleryPage() {
   const [photos, setPhotos] = useState<Photo[]>(DEMO_PHOTOS);
-  const [activeCategory, setActiveCategory] = useState("All");
+  const [activeCategory, setActiveCategory] = useState("すべて");
   const [isDemo, setIsDemo] = useState(true);
 
   useEffect(() => {
@@ -37,8 +37,6 @@ export default function GalleryPage() {
           .from("photos")
           .select("*")
           .order("created_at", { ascending: false });
-
-        console.log("Gallery query:", { session: !!session, data, error });
 
         if (!error && data && data.length > 0) {
           setPhotos(data);

@@ -57,24 +57,14 @@ export default function UploadPage() {
     const selected = Array.from(e.target.files || []);
     setFiles((prev) => [...prev, ...selected]);
 
-    // プレビュー生成（画像はDataURL、動画はobjectURL）
-    selected.forEach((file) => {
-      if (isVideoFile(file)) {
-        const url = URL.createObjectURL(file);
-        setPreviews((prev) => [...prev, url]);
-      } else {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setPreviews((prev) => [...prev, reader.result as string]);
-        };
-        reader.readAsDataURL(file);
-      }
-    });
+    // プレビュー生成（全てobjectURLで統一し、インデックスずれを防止）
+    const newPreviews = selected.map((file) => URL.createObjectURL(file));
+    setPreviews((prev) => [...prev, ...newPreviews]);
   }
 
   function removeFile(index: number) {
-    // objectURLの解放
-    if (files[index] && isVideoFile(files[index]) && previews[index]?.startsWith("blob:")) {
+    // objectURLの解放（全プレビューがobjectURLなので常に解放）
+    if (previews[index]?.startsWith("blob:")) {
       URL.revokeObjectURL(previews[index]);
     }
     setFiles((prev) => prev.filter((_, i) => i !== index));
@@ -85,8 +75,14 @@ export default function UploadPage() {
     e.preventDefault();
     if (!user || files.length === 0) return;
 
-    const cloudName = (process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "dhgmxn2rp").trim();
-    const uploadPreset = (process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "pastelalbum").trim();
+    const cloudName = (process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "").trim();
+    const uploadPreset = (process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "").trim();
+
+    if (!cloudName || !uploadPreset) {
+      setError("Cloudinaryの設定が見つかりません。環境変数を確認してください。");
+      setUploading(false);
+      return;
+    }
 
     setUploading(true);
     setError("");
