@@ -5,19 +5,21 @@ import { supabase } from "@/lib/supabase";
 import type { Photo } from "@/types/database";
 import MasonryGrid from "@/components/MasonryGrid";
 
-const CATEGORIES = ["All", "Baby", "Family", "Events", "Travel"];
+const CATEGORIES = ["All", "Photos", "Videos"];
 
 // Demo photos (used when Supabase is not configured or DB is empty)
+// デモ用写真データ（Supabase未設定時のフォールバック）
+const demoBase = { user_id: "", album_id: null, description: null, storage_path: "", file_size: null, visibility: "everyone" as const, media_type: "image" as const, duration: null, thumbnail_url: null, family_id: null };
 const DEMO_PHOTOS: Photo[] = [
-  { id: "1", user_id: "", album_id: null, title: "First Smile", description: null, storage_path: "", url: "https://images.unsplash.com/photo-1519689680058-324335c77eba?w=600&h=750&fit=crop", width: 600, height: 750, file_size: null, created_at: "2024-12-25", uploaded_at: "2024-12-25" },
-  { id: "2", user_id: "", album_id: null, title: "Sunday Morning", description: null, storage_path: "", url: "https://images.unsplash.com/photo-1544776193-352d25ca82cd?w=600&h=450&fit=crop", width: 600, height: 450, file_size: null, created_at: "2024-11-10", uploaded_at: "2024-11-10" },
-  { id: "3", user_id: "", album_id: null, title: "First Steps", description: null, storage_path: "", url: "https://images.unsplash.com/photo-1491013516836-7db643ee125a?w=600&h=900&fit=crop", width: 600, height: 900, file_size: null, created_at: "2025-01-15", uploaded_at: "2025-01-15" },
-  { id: "4", user_id: "", album_id: null, title: "Little Princess", description: null, storage_path: "", url: "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=600&h=500&fit=crop", width: 600, height: 500, file_size: null, created_at: "2025-02-14", uploaded_at: "2025-02-14" },
-  { id: "5", user_id: "", album_id: null, title: "Park Day", description: null, storage_path: "", url: "https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=600&h=650&fit=crop", width: 600, height: 650, file_size: null, created_at: "2025-03-20", uploaded_at: "2025-03-20" },
-  { id: "6", user_id: "", album_id: null, title: "Sleepy Time", description: null, storage_path: "", url: "https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=600&h=750&fit=crop", width: 600, height: 750, file_size: null, created_at: "2024-10-05", uploaded_at: "2024-10-05" },
-  { id: "7", user_id: "", album_id: null, title: "Happy Birthday", description: null, storage_path: "", url: "https://images.unsplash.com/photo-1504151932400-72d4384f04b3?w=600&h=450&fit=crop", width: 600, height: 450, file_size: null, created_at: "2025-04-01", uploaded_at: "2025-04-01" },
-  { id: "8", user_id: "", album_id: null, title: "Tiny Hands", description: null, storage_path: "", url: "https://images.unsplash.com/photo-1537655780520-1e392ead81f2?w=600&h=750&fit=crop", width: 600, height: 750, file_size: null, created_at: "2024-09-12", uploaded_at: "2024-09-12" },
-  { id: "9", user_id: "", album_id: null, title: "Story Time", description: null, storage_path: "", url: "https://images.unsplash.com/photo-1471286174890-9c112ffca5b4?w=600&h=600&fit=crop", width: 600, height: 600, file_size: null, created_at: "2025-02-28", uploaded_at: "2025-02-28" },
+  { ...demoBase, id: "1", title: "First Smile", url: "https://images.unsplash.com/photo-1519689680058-324335c77eba?w=600&h=750&fit=crop", width: 600, height: 750, created_at: "2024-12-25", uploaded_at: "2024-12-25" },
+  { ...demoBase, id: "2", title: "Sunday Morning", url: "https://images.unsplash.com/photo-1544776193-352d25ca82cd?w=600&h=450&fit=crop", width: 600, height: 450, created_at: "2024-11-10", uploaded_at: "2024-11-10" },
+  { ...demoBase, id: "3", title: "First Steps", url: "https://images.unsplash.com/photo-1491013516836-7db643ee125a?w=600&h=900&fit=crop", width: 600, height: 900, created_at: "2025-01-15", uploaded_at: "2025-01-15" },
+  { ...demoBase, id: "4", title: "Little Princess", url: "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=600&h=500&fit=crop", width: 600, height: 500, created_at: "2025-02-14", uploaded_at: "2025-02-14" },
+  { ...demoBase, id: "5", title: "Park Day", url: "https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=600&h=650&fit=crop", width: 600, height: 650, created_at: "2025-03-20", uploaded_at: "2025-03-20" },
+  { ...demoBase, id: "6", title: "Sleepy Time", url: "https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=600&h=750&fit=crop", width: 600, height: 750, created_at: "2024-10-05", uploaded_at: "2024-10-05" },
+  { ...demoBase, id: "7", title: "Happy Birthday", url: "https://images.unsplash.com/photo-1504151932400-72d4384f04b3?w=600&h=450&fit=crop", width: 600, height: 450, created_at: "2025-04-01", uploaded_at: "2025-04-01" },
+  { ...demoBase, id: "8", title: "Tiny Hands", url: "https://images.unsplash.com/photo-1537655780520-1e392ead81f2?w=600&h=750&fit=crop", width: 600, height: 750, created_at: "2024-09-12", uploaded_at: "2024-09-12" },
+  { ...demoBase, id: "9", title: "Story Time", url: "https://images.unsplash.com/photo-1471286174890-9c112ffca5b4?w=600&h=600&fit=crop", width: 600, height: 600, created_at: "2025-02-28", uploaded_at: "2025-02-28" },
 ];
 
 export default function GalleryPage() {
@@ -83,9 +85,17 @@ export default function GalleryPage() {
         </div>
       )}
 
-      {/* Masonry gallery */}
+      {/* Masonry gallery（カテゴリでフィルタリング） */}
       <div className="max-w-5xl mx-auto px-4 py-6">
-        <MasonryGrid photos={photos} />
+        <MasonryGrid
+          photos={
+            activeCategory === "All"
+              ? photos
+              : activeCategory === "Photos"
+              ? photos.filter((p) => p.media_type === "image")
+              : photos.filter((p) => p.media_type === "video")
+          }
+        />
       </div>
 
       {/* Upload FAB */}

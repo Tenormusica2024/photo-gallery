@@ -5,12 +5,19 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import type { Album } from "@/types/database";
 
+// 画像・動画の判定
+function isVideoFile(file: File): boolean {
+  return file.type.startsWith("video/");
+}
+
 export default function UploadPage() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [user, setUser] = useState<string | null>(null);
+  const [familyId, setFamilyId] = useState<string | null>(null);
   const [albums, setAlbums] = useState<Album[]>([]);
   const [selectedAlbum, setSelectedAlbum] = useState<string>("");
+  const [visibility, setVisibility] = useState<"everyone" | "admin_only">("everyone");
   const [title, setTitle] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
@@ -19,14 +26,22 @@ export default function UploadPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) {
-        router.push("/login");
-        return;
-      }
-      setUser(data.user.id);
-      loadAlbums(data.user.id);
-    });
+    async function init() {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser) { router.push("/login"); return; }
+      setUser(authUser.id);
+      loadAlbums(authUser.id);
+
+      // ユーザーの所属ファミリーを取得
+      const { data: membership } = await supabase
+        .from("family_members")
+        .select("family_id")
+        .eq("user_id", authUser.id)
+        .limit(1)
+        .single();
+      if (membership) setFamilyId(membership.family_id);
+    }
+    init();
   }, [router]);
 
   async function loadAlbums(userId: string) {
@@ -42,17 +57,26 @@ export default function UploadPage() {
     const selected = Array.from(e.target.files || []);
     setFiles((prev) => [...prev, ...selected]);
 
-    // Generate previews
+    // プレビュー生成（画像はDataURL、動画はobjectURL）
     selected.forEach((file) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviews((prev) => [...prev, reader.result as string]);
-      };
-      reader.readAsDataURL(file);
+      if (isVideoFile(file)) {
+        const url = URL.createObjectURL(file);
+        setPreviews((prev) => [...prev, url]);
+      } else {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setPreviews((prev) => [...prev, reader.result as string]);
+        };
+        reader.readAsDataURL(file);
+      }
     });
   }
 
   function removeFile(index: number) {
+    // objectURLの解放
+    if (files[index] && isVideoFile(files[index]) && previews[index]?.startsWith("blob:")) {
+      URL.revokeObjectURL(previews[index]);
+    }
     setFiles((prev) => prev.filter((_, i) => i !== index));
     setPreviews((prev) => prev.filter((_, i) => i !== index));
   }
@@ -68,29 +92,34 @@ export default function UploadPage() {
     try {
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
+        const isVideo = isVideoFile(file);
         const ext = file.name.split(".").pop();
         const path = `${user}/${Date.now()}-${i}.${ext}`;
+        const bucket = isVideo ? "videos" : "photos";
 
-        // Upload to Supabase Storage
+        // Supabase Storageにアップロード
         const { error: uploadError } = await supabase.storage
-          .from("photos")
+          .from(bucket)
           .upload(path, file);
 
         if (uploadError) throw uploadError;
 
-        // Get public URL
+        // 公開URLを取得
         const { data: urlData } = supabase.storage
-          .from("photos")
+          .from(bucket)
           .getPublicUrl(path);
 
-        // Insert photo record
+        // photosテーブルにレコード挿入（動画もphotosテーブルで管理）
         const { error: insertError } = await supabase.from("photos").insert({
           user_id: user,
           album_id: selectedAlbum || null,
+          family_id: familyId,
           title: title || file.name.replace(/\.[^/.]+$/, ""),
           storage_path: path,
           url: urlData.publicUrl,
           file_size: file.size,
+          media_type: isVideo ? "video" : "image",
+          visibility,
         });
 
         if (insertError) throw insertError;
@@ -106,6 +135,18 @@ export default function UploadPage() {
     }
   }
 
+  const fileCount = files.length;
+  const imageCount = files.filter((f) => !isVideoFile(f)).length;
+  const videoCount = files.filter((f) => isVideoFile(f)).length;
+
+  function uploadLabel(): string {
+    if (uploading) return `Uploading... ${progress}%`;
+    const parts: string[] = [];
+    if (imageCount > 0) parts.push(`${imageCount} photo${imageCount !== 1 ? "s" : ""}`);
+    if (videoCount > 0) parts.push(`${videoCount} video${videoCount !== 1 ? "s" : ""}`);
+    return parts.length > 0 ? `Upload ${parts.join(" & ")}` : "Select files to upload";
+  }
+
   if (!user) {
     return (
       <div className="min-h-[calc(100vh-56px)] flex items-center justify-center">
@@ -118,42 +159,56 @@ export default function UploadPage() {
     <div className="min-h-[calc(100vh-56px)] bg-gradient-to-b from-pink-50 to-white px-4 py-8">
       <div className="max-w-2xl mx-auto">
         <h1 className="font-quicksand text-2xl font-bold text-pink-600 mb-6 text-center">
-          Upload Photos
+          Upload
         </h1>
 
         <form onSubmit={handleUpload} className="space-y-6">
-          {/* Drop zone */}
+          {/* ドロップゾーン */}
           <div
             onClick={() => fileInputRef.current?.click()}
             className="border-2 border-dashed border-pink-200 rounded-3xl p-10 text-center cursor-pointer hover:border-pink-400 hover:bg-pink-50/50 transition-all"
           >
             <div className="text-4xl text-pink-300 mb-2">+</div>
             <p className="text-gray-500 text-sm">
-              Click to select photos or drag and drop
+              Click to select photos or videos
             </p>
             <p className="text-gray-400 text-xs mt-1">
-              JPG, PNG, WebP (max 10MB each)
+              JPG, PNG, WebP, MP4, MOV (photos: 10MB / videos: 100MB)
             </p>
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/*"
+              accept="image/*,video/*"
               multiple
               onChange={handleFileSelect}
               className="hidden"
             />
           </div>
 
-          {/* Previews */}
+          {/* プレビュー */}
           {previews.length > 0 && (
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
               {previews.map((src, i) => (
                 <div key={i} className="relative group rounded-xl overflow-hidden">
-                  <img
-                    src={src}
-                    alt=""
-                    className="w-full h-24 object-cover"
-                  />
+                  {files[i] && isVideoFile(files[i]) ? (
+                    <video
+                      src={src}
+                      className="w-full h-24 object-cover"
+                      muted
+                    />
+                  ) : (
+                    <img
+                      src={src}
+                      alt=""
+                      className="w-full h-24 object-cover"
+                    />
+                  )}
+                  {/* 動画バッジ */}
+                  {files[i] && isVideoFile(files[i]) && (
+                    <div className="absolute bottom-1 left-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded">
+                      VIDEO
+                    </div>
+                  )}
                   <button
                     type="button"
                     onClick={() => removeFile(i)}
@@ -166,7 +221,7 @@ export default function UploadPage() {
             </div>
           )}
 
-          {/* Title */}
+          {/* タイトル */}
           <div>
             <label className="block text-xs font-semibold text-gray-500 mb-1">
               Title (optional)
@@ -175,12 +230,12 @@ export default function UploadPage() {
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Photo title"
+              placeholder="Photo / video title"
               className="w-full px-4 py-3 border-[1.5px] border-pink-100 rounded-2xl text-sm outline-none focus:border-pink-400 transition-colors"
             />
           </div>
 
-          {/* Album selector */}
+          {/* アルバム選択 */}
           <div>
             <label className="block text-xs font-semibold text-gray-500 mb-1">
               Album (optional)
@@ -199,10 +254,41 @@ export default function UploadPage() {
             </select>
           </div>
 
-          {/* Error */}
+          {/* 公開範囲 */}
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 mb-1">
+              Visibility
+            </label>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setVisibility("everyone")}
+                className={`flex-1 py-2.5 rounded-2xl text-sm font-semibold border-[1.5px] transition-all ${
+                  visibility === "everyone"
+                    ? "bg-pink-100 border-pink-300 text-pink-600"
+                    : "bg-white border-pink-100 text-gray-500"
+                }`}
+              >
+                Everyone
+              </button>
+              <button
+                type="button"
+                onClick={() => setVisibility("admin_only")}
+                className={`flex-1 py-2.5 rounded-2xl text-sm font-semibold border-[1.5px] transition-all ${
+                  visibility === "admin_only"
+                    ? "bg-purple-100 border-purple-300 text-purple-600"
+                    : "bg-white border-pink-100 text-gray-500"
+                }`}
+              >
+                Admin Only
+              </button>
+            </div>
+          </div>
+
+          {/* エラー */}
           {error && <p className="text-red-400 text-sm text-center">{error}</p>}
 
-          {/* Progress */}
+          {/* プログレスバー */}
           {uploading && (
             <div className="w-full bg-pink-100 rounded-full h-2">
               <div
@@ -212,15 +298,13 @@ export default function UploadPage() {
             </div>
           )}
 
-          {/* Submit */}
+          {/* 送信ボタン */}
           <button
             type="submit"
-            disabled={uploading || files.length === 0}
+            disabled={uploading || fileCount === 0}
             className="w-full py-3 bg-gradient-to-r from-pink-400 to-purple-400 text-white rounded-2xl font-bold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
           >
-            {uploading
-              ? `Uploading... ${progress}%`
-              : `Upload ${files.length} photo${files.length !== 1 ? "s" : ""}`}
+            {uploadLabel()}
           </button>
         </form>
       </div>

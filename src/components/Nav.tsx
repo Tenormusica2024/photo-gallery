@@ -10,12 +10,29 @@ export default function Nav() {
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUser(data.user));
+    async function init() {
+      const { data } = await supabase.auth.getUser();
+      setUser(data.user);
+      if (data.user) {
+        // 管理者権限チェック
+        const { data: membership } = await supabase
+          .from("family_members")
+          .select("role")
+          .eq("user_id", data.user.id)
+          .limit(1)
+          .single();
+        if (membership?.role === "admin") setIsAdmin(true);
+      }
+    }
+    init();
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
+      if (!session?.user) setIsAdmin(false);
     });
 
     return () => listener.subscription.unsubscribe();
@@ -39,7 +56,23 @@ export default function Nav() {
         pastel<span className="text-purple-400">album</span>
       </Link>
 
-      <div className="flex items-center gap-6">
+      {/* モバイルメニューボタン */}
+      <button
+        onClick={() => setMenuOpen(!menuOpen)}
+        className="sm:hidden text-gray-500 hover:text-pink-600"
+        aria-label="Menu"
+      >
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          {menuOpen ? (
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          ) : (
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          )}
+        </svg>
+      </button>
+
+      {/* デスクトップメニュー */}
+      <div className="hidden sm:flex items-center gap-6">
         <Link href="/" className={linkClass("/")}>
           Gallery
         </Link>
@@ -51,9 +84,11 @@ export default function Nav() {
             <Link href="/upload" className={linkClass("/upload")}>
               Upload
             </Link>
+            <Link href="/admin" className={linkClass("/admin")}>
+              {isAdmin ? "Admin" : "Family"}
+            </Link>
           </>
         )}
-
         {user ? (
           <button
             onClick={handleSignOut}
@@ -70,6 +105,46 @@ export default function Nav() {
           </Link>
         )}
       </div>
+
+      {/* モバイルドロップダウン */}
+      {menuOpen && (
+        <div className="absolute top-full left-0 right-0 bg-white/95 backdrop-blur-md border-b border-pink-100 shadow-lg sm:hidden z-50">
+          <div className="flex flex-col px-6 py-4 gap-3">
+            <Link href="/" className={linkClass("/")} onClick={() => setMenuOpen(false)}>
+              Gallery
+            </Link>
+            {user && (
+              <>
+                <Link href="/profile" className={linkClass("/profile")} onClick={() => setMenuOpen(false)}>
+                  Albums
+                </Link>
+                <Link href="/upload" className={linkClass("/upload")} onClick={() => setMenuOpen(false)}>
+                  Upload
+                </Link>
+                <Link href="/admin" className={linkClass("/admin")} onClick={() => setMenuOpen(false)}>
+                  {isAdmin ? "Admin" : "Family"}
+                </Link>
+              </>
+            )}
+            {user ? (
+              <button
+                onClick={() => { handleSignOut(); setMenuOpen(false); }}
+                className="text-sm font-semibold text-gray-500 hover:text-pink-600 transition-colors text-left"
+              >
+                Sign Out
+              </button>
+            ) : (
+              <Link
+                href="/login"
+                className="text-sm font-semibold text-pink-600"
+                onClick={() => setMenuOpen(false)}
+              >
+                Login
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
     </nav>
   );
 }

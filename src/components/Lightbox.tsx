@@ -12,6 +12,7 @@ interface Props {
 
 export default function Lightbox({ photos, currentIndex, onClose, onNavigate }: Props) {
   const photo = photos[currentIndex];
+  const isVideo = photo.media_type === "video";
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -33,21 +34,45 @@ export default function Lightbox({ photos, currentIndex, onClose, onNavigate }: 
     };
   }, [handleKeyDown]);
 
+  // ダウンロードリンクを新規タブで開く（Supabase Storage公開URLなのでそのまま使用可能）
+  function handleDownload() {
+    const a = document.createElement("a");
+    a.href = photo.url;
+    a.download = photo.title || (isVideo ? "video" : "photo");
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+
   return (
     <div
       className="fixed inset-0 z-[999] bg-black/80 backdrop-blur-lg flex items-center justify-center flex-col"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      {/* Close */}
-      <button
-        onClick={onClose}
-        className="absolute top-6 right-6 w-11 h-11 rounded-full bg-white/20 text-white text-2xl hover:bg-white/30 transition-colors flex items-center justify-center"
-        aria-label="Close"
-      >
-        &times;
-      </button>
+      {/* ツールバー: 閉じる + ダウンロード */}
+      <div className="absolute top-6 right-6 flex items-center gap-3">
+        <button
+          onClick={handleDownload}
+          className="w-11 h-11 rounded-full bg-white/20 text-white hover:bg-white/30 transition-colors flex items-center justify-center"
+          aria-label="Download"
+          title="Download"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+        </button>
+        <button
+          onClick={onClose}
+          className="w-11 h-11 rounded-full bg-white/20 text-white text-2xl hover:bg-white/30 transition-colors flex items-center justify-center"
+          aria-label="Close"
+        >
+          &times;
+        </button>
+      </div>
 
-      {/* Navigation arrows */}
+      {/* ナビゲーション矢印 */}
       {currentIndex > 0 && (
         <button
           onClick={() => onNavigate(currentIndex - 1)}
@@ -67,14 +92,24 @@ export default function Lightbox({ photos, currentIndex, onClose, onNavigate }: 
         </button>
       )}
 
-      {/* Image */}
-      <img
-        src={photo.url}
-        alt={photo.title || "Photo"}
-        className="max-w-[90vw] max-h-[80vh] rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.3)]"
-      />
+      {/* メディア表示: 画像 or 動画 */}
+      {isVideo ? (
+        <video
+          src={photo.url}
+          controls
+          autoPlay
+          playsInline
+          className="max-w-[90vw] max-h-[80vh] rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.3)]"
+        />
+      ) : (
+        <img
+          src={photo.url}
+          alt={photo.title || "Photo"}
+          className="max-w-[90vw] max-h-[80vh] rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.3)]"
+        />
+      )}
 
-      {/* Info */}
+      {/* 情報 */}
       <div className="text-white text-center mt-4">
         <p className="font-bold">{photo.title || "Untitled"}</p>
         <p className="text-sm text-white/75">
