@@ -85,9 +85,8 @@ export default function UploadPage() {
     e.preventDefault();
     if (!user || files.length === 0) return;
 
-    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "dhgmxn2rp";
-    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "pastelalbum";
-    console.log("Cloudinary config:", { cloudName, uploadPreset });
+    const cloudName = (process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "dhgmxn2rp").trim();
+    const uploadPreset = (process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "pastelalbum").trim();
 
     setUploading(true);
     setError("");
