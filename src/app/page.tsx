@@ -52,10 +52,10 @@ export default function GalleryPage() {
       {/* Hero */}
       <div className="text-center py-12 px-6 bg-gradient-to-b from-pink-50 to-white">
         <h1 className="font-quicksand text-3xl sm:text-4xl font-bold text-pink-600 mb-2">
-          大切な思い出
+          Our Precious Moments
         </h1>
         <p className="text-gray-500 text-base max-w-md mx-auto mb-6">
-          家族の写真、笑顔、思い出をひとつの場所に
+          Family photos, smiles, and memories all in one beautiful place
         </p>
 
         {/* Category tabs */}
