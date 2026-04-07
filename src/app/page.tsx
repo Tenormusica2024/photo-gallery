@@ -29,19 +29,23 @@ export default function GalleryPage() {
 
   useEffect(() => {
     async function loadPhotos() {
-      // Try to load from Supabase; fall back to demo if not configured
       try {
+        // authセッション復元を待ってからクエリ実行
+        const { data: { session } } = await supabase.auth.getSession();
+
         const { data, error } = await supabase
           .from("photos")
           .select("*")
           .order("created_at", { ascending: false });
 
+        console.log("Gallery query:", { session: !!session, data, error });
+
         if (!error && data && data.length > 0) {
           setPhotos(data);
           setIsDemo(false);
         }
-      } catch {
-        // Supabase not configured, use demo data
+      } catch (err) {
+        console.error("Gallery load error:", err);
       }
     }
     loadPhotos();
