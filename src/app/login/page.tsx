@@ -21,9 +21,14 @@ export default function LoginPage() {
 
     try {
       if (isSignUp) {
-        const { error } = await supabase.auth.signUp({ email, password });
+        const { data, error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
-        setMessage("確認メールを送信しました。メールのリンクをクリックしてください。");
+        // メール確認無効化済み: セッションが返ればそのままログイン
+        if (data.session) {
+          router.push("/");
+          return;
+        }
+        setMessage("アカウントを作成しました。ログインしてください。");
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
