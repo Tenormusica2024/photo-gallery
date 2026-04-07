@@ -1,26 +1,35 @@
 @import "tailwindcss";
-
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@import url("https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700&family=Quicksand:wght@400;500;600;700&display=swap");
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-background: #fafafa;
+  --color-foreground: #424242;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* Pastel Dream palette */
+  --color-pink-50: #fce4ec;
+  --color-pink-100: #f8bbd0;
+  --color-pink-200: #f48fb1;
+  --color-pink-300: #f06292;
+  --color-pink-400: #ec407a;
+  --color-pink-500: #e91e63;
+  --color-pink-600: #d81b60;
+  --color-lavender-50: #f3e5f5;
+  --color-lavender-100: #e1bee7;
+  --color-lavender-200: #ce93d8;
+  --color-lavender-400: #ab47bc;
+  --color-purple-300: #ba68c8;
+  --color-purple-400: #ab47bc;
+
+  --font-sans: "Nunito", sans-serif;
+  --font-quicksand: "Quicksand", sans-serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  background: var(--color-background);
+  color: var(--color-foreground);
+}
+
+.font-quicksand {
+  font-family: var(--font-quicksand);
 }

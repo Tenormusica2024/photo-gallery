@@ -1,65 +1,101 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import type { Photo } from "@/types/database";
+import MasonryGrid from "@/components/MasonryGrid";
+
+const CATEGORIES = ["All", "Baby", "Family", "Events", "Travel"];
+
+// Demo photos (used when Supabase is not configured or DB is empty)
+const DEMO_PHOTOS: Photo[] = [
+  { id: "1", user_id: "", album_id: null, title: "First Smile", description: null, storage_path: "", url: "https://images.unsplash.com/photo-1519689680058-324335c77eba?w=600&h=750&fit=crop", width: 600, height: 750, file_size: null, created_at: "2024-12-25", uploaded_at: "2024-12-25" },
+  { id: "2", user_id: "", album_id: null, title: "Sunday Morning", description: null, storage_path: "", url: "https://images.unsplash.com/photo-1544776193-352d25ca82cd?w=600&h=450&fit=crop", width: 600, height: 450, file_size: null, created_at: "2024-11-10", uploaded_at: "2024-11-10" },
+  { id: "3", user_id: "", album_id: null, title: "First Steps", description: null, storage_path: "", url: "https://images.unsplash.com/photo-1491013516836-7db643ee125a?w=600&h=900&fit=crop", width: 600, height: 900, file_size: null, created_at: "2025-01-15", uploaded_at: "2025-01-15" },
+  { id: "4", user_id: "", album_id: null, title: "Little Princess", description: null, storage_path: "", url: "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=600&h=500&fit=crop", width: 600, height: 500, file_size: null, created_at: "2025-02-14", uploaded_at: "2025-02-14" },
+  { id: "5", user_id: "", album_id: null, title: "Park Day", description: null, storage_path: "", url: "https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=600&h=650&fit=crop", width: 600, height: 650, file_size: null, created_at: "2025-03-20", uploaded_at: "2025-03-20" },
+  { id: "6", user_id: "", album_id: null, title: "Sleepy Time", description: null, storage_path: "", url: "https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=600&h=750&fit=crop", width: 600, height: 750, file_size: null, created_at: "2024-10-05", uploaded_at: "2024-10-05" },
+  { id: "7", user_id: "", album_id: null, title: "Happy Birthday", description: null, storage_path: "", url: "https://images.unsplash.com/photo-1504151932400-72d4384f04b3?w=600&h=450&fit=crop", width: 600, height: 450, file_size: null, created_at: "2025-04-01", uploaded_at: "2025-04-01" },
+  { id: "8", user_id: "", album_id: null, title: "Tiny Hands", description: null, storage_path: "", url: "https://images.unsplash.com/photo-1537655780520-1e392ead81f2?w=600&h=750&fit=crop", width: 600, height: 750, file_size: null, created_at: "2024-09-12", uploaded_at: "2024-09-12" },
+  { id: "9", user_id: "", album_id: null, title: "Story Time", description: null, storage_path: "", url: "https://images.unsplash.com/photo-1471286174890-9c112ffca5b4?w=600&h=600&fit=crop", width: 600, height: 600, file_size: null, created_at: "2025-02-28", uploaded_at: "2025-02-28" },
+];
+
+export default function GalleryPage() {
+  const [photos, setPhotos] = useState<Photo[]>(DEMO_PHOTOS);
+  const [activeCategory, setActiveCategory] = useState("All");
+  const [isDemo, setIsDemo] = useState(true);
+
+  useEffect(() => {
+    async function loadPhotos() {
+      // Try to load from Supabase; fall back to demo if not configured
+      try {
+        const { data, error } = await supabase
+          .from("photos")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (!error && data && data.length > 0) {
+          setPhotos(data);
+          setIsDemo(false);
+        }
+      } catch {
+        // Supabase not configured, use demo data
+      }
+    }
+    loadPhotos();
+  }, []);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <>
+      {/* Hero */}
+      <div className="text-center py-12 px-6 bg-gradient-to-b from-pink-50 to-white">
+        <h1 className="font-quicksand text-3xl sm:text-4xl font-bold text-pink-600 mb-2">
+          Our Precious Moments
+        </h1>
+        <p className="text-gray-500 text-base max-w-md mx-auto mb-6">
+          Family photos, smiles, and memories all in one beautiful place
+        </p>
+
+        {/* Category tabs */}
+        <div className="flex gap-2 justify-center flex-wrap">
+          {CATEGORIES.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setActiveCategory(cat)}
+              className={`px-4 py-1.5 rounded-full text-sm font-semibold border-[1.5px] transition-all ${
+                activeCategory === cat
+                  ? "bg-pink-100 border-pink-200 text-pink-600"
+                  : "bg-white border-pink-100 text-gray-500 hover:bg-pink-50"
+              }`}
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+              {cat}
+            </button>
+          ))}
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </div>
+
+      {/* Demo banner */}
+      {isDemo && (
+        <div className="max-w-5xl mx-auto px-4 mt-4">
+          <div className="bg-lavender-50 border border-lavender-100 rounded-2xl px-4 py-3 text-sm text-purple-400 text-center">
+            Demo mode - Supabase not configured. Showing sample photos.
+          </div>
         </div>
-      </main>
-    </div>
+      )}
+
+      {/* Masonry gallery */}
+      <div className="max-w-5xl mx-auto px-4 py-6">
+        <MasonryGrid photos={photos} />
+      </div>
+
+      {/* Upload FAB */}
+      <a
+        href="/upload"
+        className="fixed bottom-8 right-8 w-14 h-14 rounded-full bg-gradient-to-br from-pink-400 to-purple-400 text-white flex items-center justify-center text-3xl shadow-[0_4px_16px_rgba(216,27,96,0.3)] hover:scale-110 hover:shadow-[0_6px_24px_rgba(216,27,96,0.4)] transition-all"
+        aria-label="Upload Photos"
+      >
+        +
+      </a>
+    </>
   );
 }
