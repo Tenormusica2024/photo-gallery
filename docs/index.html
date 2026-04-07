@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Photo Gallery - Design Proposals</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: linear-gradient(135deg, #fce4ec 0%, #f3e5f5 50%, #e8eaf6 100%);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+  h1 {
+    font-size: 2rem;
+    color: #ad1457;
+    margin-bottom: 0.5rem;
+  }
+  .subtitle {
+    color: #7b1fa2;
+    margin-bottom: 2.5rem;
+    font-size: 1.1rem;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    max-width: 1200px;
+    width: 100%;
+  }
+  .card {
+    background: white;
+    border-radius: 1.5rem;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(173, 20, 87, 0.1);
+    transition: transform 0.3s, box-shadow 0.3s;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+  }
+  .card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 30px rgba(173, 20, 87, 0.2);
+  }
+  .card-img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+  }
+  .card-body {
+    padding: 1.2rem;
+  }
+  .card-body h2 {
+    font-size: 1.2rem;
+    color: #ad1457;
+    margin-bottom: 0.3rem;
+  }
+  .card-body p {
+    color: #666;
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+  .tag {
+    display: inline-block;
+    background: #fce4ec;
+    color: #ad1457;
+    padding: 0.2rem 0.7rem;
+    border-radius: 1rem;
+    font-size: 0.75rem;
+    margin-top: 0.5rem;
+  }
+</style>
+</head>
+<body>
+  <h1>Photo Gallery Design Proposals</h1>
+  <p class="subtitle">4 patterns for your family photo gallery</p>
+  <div class="grid">
+    <a href="pattern-a/index.html" class="card">
+      <img src="https://images.unsplash.com/photo-1519689680058-324335c77eba?w=600&h=400&fit=crop" alt="Pattern A" class="card-img">
+      <div class="card-body">
+        <h2>Pattern A: Pastel Dream</h2>
+        <p>Masonry Grid layout with soft pink and lavender tones. Dreamy, airy feel perfect for baby photos.</p>
+        <span class="tag">Masonry Grid</span>
+        <span class="tag">Pastel Pink</span>
+      </div>
+    </a>
+    <a href="pattern-b/index.html" class="card">
+      <img src="https://images.unsplash.com/photo-1544776193-352d25ca82cd?w=600&h=400&fit=crop" alt="Pattern B" class="card-img">
+      <div class="card-body">
+        <h2>Pattern B: Soft Blossom</h2>
+        <p>Card-based layout with cherry blossom inspired palette. Rounded corners and playful hover effects.</p>
+        <span class="tag">Card Grid</span>
+        <span class="tag">Sakura Pink</span>
+      </div>
+    </a>
+    <a href="pattern-c/index.html" class="card">
+      <img src="https://images.unsplash.com/photo-1491013516836-7db643ee125a?w=600&h=400&fit=crop" alt="Pattern C" class="card-img">
+      <div class="card-body">
+        <h2>Pattern C: Cotton Candy</h2>
+        <p>Justified grid with gradient accents. Cotton candy colors with mint and peach highlights.</p>
+        <span class="tag">Justified Grid</span>
+        <span class="tag">Mint x Peach</span>
+      </div>
+    </a>
+    <a href="pattern-d/index.html" class="card">
+      <img src="https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=600&h=400&fit=crop" alt="Pattern D" class="card-img">
+      <div class="card-body">
+        <h2>Pattern D: Milk Tea</h2>
+        <p>Clean minimal grid with warm milk tea palette. Cozy, warm atmosphere with subtle animations.</p>
+        <span class="tag">Clean Grid</span>
+        <span class="tag">Warm Beige</span>
+      </div>
+    </a>
+  </div>
+</body>
+</html>

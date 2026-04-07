@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cotton Candy - Photo Gallery</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Pacifico&display=swap');
+  :root {
+    --mint: #b2dfdb;
+    --mint-dark: #00897b;
+    --mint-light: #e0f2f1;
+    --peach: #ffccbc;
+    --peach-dark: #ff7043;
+    --peach-light: #fbe9e7;
+    --lilac: #e1bee7;
+    --lilac-dark: #8e24aa;
+    --sky: #b3e5fc;
+    --sky-dark: #0288d1;
+    --white: #ffffff;
+    --bg: #fafafa;
+    --text: #37474f;
+    --text-light: #78909c;
+    --shadow: 0 2px 16px rgba(0,0,0,0.06);
+    --shadow-hover: 0 8px 32px rgba(0,0,0,0.1);
+    --r: 1.2rem;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Poppins', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  /* --- TOP NAV --- */
+  .topnav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--white);
+    padding: 0.7rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 1px 8px rgba(0,0,0,0.04);
+  }
+  .topnav-logo {
+    font-family: 'Pacifico', cursive;
+    font-size: 1.5rem;
+    background: linear-gradient(135deg, var(--mint-dark), var(--peach-dark));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .topnav-center {
+    display: flex;
+    gap: 0.3rem;
+    background: var(--bg);
+    padding: 0.25rem;
+    border-radius: 2rem;
+  }
+  .topnav-center button {
+    padding: 0.4rem 1rem;
+    border: none;
+    border-radius: 2rem;
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    background: transparent;
+    color: var(--text-light);
+    transition: all 0.2s;
+  }
+  .topnav-center button.active {
+    background: var(--white);
+    color: var(--text);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+  .topnav-right {
+    display: flex;
+    gap: 0.8rem;
+    align-items: center;
+  }
+  .topnav-right .btn-upload {
+    background: linear-gradient(135deg, var(--mint), var(--peach));
+    color: var(--text);
+    border: none;
+    padding: 0.45rem 1.1rem;
+    border-radius: 2rem;
+    font-family: inherit;
+    font-weight: 600;
+    font-size: 0.8rem;
+    cursor: pointer;
+  }
+  .avatar-sm {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--mint);
+    cursor: pointer;
+  }
+
+  /* --- HERO BANNER --- */
+  .hero-banner {
+    background: linear-gradient(135deg, var(--mint-light), var(--peach-light), var(--lilac));
+    padding: 3rem 2rem 2rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-banner::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at 30% 70%, rgba(178,223,219,0.3) 0%, transparent 50%),
+                radial-gradient(circle at 70% 30%, rgba(255,204,188,0.3) 0%, transparent 50%);
+    animation: drift 10s ease-in-out infinite;
+  }
+  @keyframes drift {
+    0%, 100% { transform: translate(0, 0); }
+    50% { transform: translate(-2%, 2%); }
+  }
+  .hero-banner h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text);
+    position: relative;
+    z-index: 1;
+  }
+  .hero-banner p {
+    color: var(--text-light);
+    position: relative;
+    z-index: 1;
+    margin-top: 0.3rem;
+  }
+
+  /* --- JUSTIFIED GRID --- */
+  .gallery-wrap {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1.5rem;
+  }
+  .justified-row {
+    display: flex;
+    gap: 0.6rem;
+    margin-bottom: 0.6rem;
+  }
+  .justified-item {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--r);
+    cursor: pointer;
+    transition: transform 0.3s;
+    min-height: 180px;
+  }
+  .justified-item.wide { flex: 1.8; }
+  .justified-item.tall { flex: 0.7; min-height: 280px; }
+  .justified-item:hover { transform: scale(1.02); }
+  .justified-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.4s;
+  }
+  .justified-item:hover img { transform: scale(1.08); }
+  .justified-item .badge {
+    position: absolute;
+    top: 0.7rem;
+    left: 0.7rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 0.6rem;
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: white;
+    z-index: 2;
+  }
+  .badge-mint { background: var(--mint-dark); }
+  .badge-peach { background: var(--peach-dark); }
+  .badge-lilac { background: var(--lilac-dark); }
+  .badge-sky { background: var(--sky-dark); }
+  .justified-item .hover-info {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 2.5rem 1rem 1rem;
+    background: linear-gradient(transparent, rgba(0,0,0,0.5));
+    color: white;
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: 2;
+  }
+  .justified-item:hover .hover-info { opacity: 1; }
+  .hover-info .title { font-weight: 600; font-size: 0.9rem; }
+  .hover-info .meta { font-size: 0.7rem; opacity: 0.85; }
+
+  @media (max-width: 600px) {
+    .justified-row { flex-direction: column; }
+    .justified-item, .justified-item.wide, .justified-item.tall {
+      flex: none;
+      min-height: 200px;
+    }
+  }
+
+  /* --- LOGIN --- */
+  .login-page {
+    display: none;
+    min-height: 100vh;
+    background: linear-gradient(135deg, var(--mint-light), var(--peach-light));
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+  .login-page.active { display: flex; }
+  .login-card {
+    background: var(--white);
+    border-radius: 2rem;
+    padding: 2.5rem 2rem;
+    box-shadow: var(--shadow-hover);
+    max-width: 380px;
+    width: 100%;
+    text-align: center;
+  }
+  .login-card .logo-text {
+    font-family: 'Pacifico', cursive;
+    font-size: 1.6rem;
+    background: linear-gradient(135deg, var(--mint-dark), var(--peach-dark));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.3rem;
+  }
+  .login-card .sub { color: var(--text-light); font-size: 0.85rem; margin-bottom: 1.5rem; }
+  .login-card .field { text-align: left; margin-bottom: 0.8rem; }
+  .login-card label { font-size: 0.75rem; font-weight: 600; color: var(--text-light); display: block; margin-bottom: 0.2rem; }
+  .login-card input {
+    width: 100%;
+    padding: 0.65rem 0.9rem;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 0.8rem;
+    font-family: inherit;
+    font-size: 0.85rem;
+    outline: none;
+  }
+  .login-card input:focus { border-color: var(--mint-dark); }
+  .login-card .btn-submit {
+    width: 100%;
+    padding: 0.75rem;
+    border: none;
+    border-radius: 1.5rem;
+    background: linear-gradient(135deg, var(--mint), var(--peach));
+    color: var(--text);
+    font-family: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 0.5rem;
+  }
+  .login-card .foot { margin-top: 1rem; font-size: 0.75rem; color: var(--text-light); }
+  .login-card .foot a { color: var(--mint-dark); text-decoration: none; }
+
+  /* --- PROFILE --- */
+  .profile-page {
+    display: none;
+    padding: 2rem;
+  }
+  .profile-page.active { display: block; }
+  .profile-top {
+    max-width: 700px;
+    margin: 0 auto;
+    text-align: center;
+    padding: 2rem 0;
+  }
+  .profile-top img {
+    width: 80px; height: 80px; border-radius: 50%; object-fit: cover;
+    border: 3px solid var(--mint);
+    margin-bottom: 0.8rem;
+  }
+  .profile-top h2 { font-size: 1.3rem; }
+  .profile-top .bio { color: var(--text-light); font-size: 0.85rem; }
+  .stat-row {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin: 1rem 0;
+  }
+  .stat-box { text-align: center; }
+  .stat-box .val { font-size: 1.2rem; font-weight: 700; color: var(--mint-dark); }
+  .stat-box .lbl { font-size: 0.7rem; color: var(--text-light); }
+
+  .page-label {
+    position: fixed;
+    bottom: 1.5rem;
+    left: 1.5rem;
+    background: var(--white);
+    border: 1.5px solid var(--mint);
+    border-radius: 1rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.75rem;
+    color: var(--mint-dark);
+    font-weight: 600;
+    box-shadow: var(--shadow);
+    z-index: 50;
+  }
+  .back-link {
+    text-align: center;
+    padding: 2rem;
+  }
+  .back-link a { color: var(--mint-dark); text-decoration: none; font-weight: 600; font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<div class="topnav" id="main-nav">
+  <div class="topnav-logo">Cotton Candy</div>
+  <div class="topnav-center">
+    <button class="active" onclick="showView('gallery')">Gallery</button>
+    <button onclick="showView('profile')">Profile</button>
+    <button onclick="showView('login')">Login</button>
+  </div>
+  <div class="topnav-right">
+    <button class="btn-upload">+ Upload</button>
+    <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face" alt="" class="avatar-sm">
+  </div>
+</div>
+
+<!-- GALLERY -->
+<div id="view-gallery">
+  <div class="hero-banner">
+    <h1>Our Sweet Memories</h1>
+    <p>A colorful collection of family moments</p>
+  </div>
+  <div class="gallery-wrap">
+    <!-- Row 1 -->
+    <div class="justified-row">
+      <div class="justified-item wide">
+        <img src="https://images.unsplash.com/photo-1519689680058-324335c77eba?w=800&h=400&fit=crop" alt="" loading="lazy">
+        <span class="badge badge-peach">Baby</span>
+        <div class="hover-info"><div class="title">First Smile</div><div class="meta">2024.12.25</div></div>
+      </div>
+      <div class="justified-item">
+        <img src="https://images.unsplash.com/photo-1544776193-352d25ca82cd?w=400&h=400&fit=crop" alt="" loading="lazy">
+        <span class="badge badge-mint">Family</span>
+        <div class="hover-info"><div class="title">Together</div><div class="meta">2024.11.10</div></div>
+      </div>
+    </div>
+    <!-- Row 2 -->
+    <div class="justified-row">
+      <div class="justified-item">
+        <img src="https://images.unsplash.com/photo-1491013516836-7db643ee125a?w=400&h=400&fit=crop" alt="" loading="lazy">
+        <span class="badge badge-lilac">Milestone</span>
+        <div class="hover-info"><div class="title">First Steps</div><div class="meta">2025.01.15</div></div>
+      </div>
+      <div class="justified-item">
+        <img src="https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=400&h=400&fit=crop" alt="" loading="lazy">
+        <span class="badge badge-peach">Events</span>
+        <div class="hover-info"><div class="title">Princess Day</div><div class="meta">2025.02.14</div></div>
+      </div>
+      <div class="justified-item">
+        <img src="https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=400&h=400&fit=crop" alt="" loading="lazy">
+        <span class="badge badge-sky">Travel</span>
+        <div class="hover-info"><div class="title">Park Day</div><div class="meta">2025.03.20</div></div>
+      </div>
+    </div>
+    <!-- Row 3 -->
+    <div class="justified-row">
+      <div class="justified-item">
+        <img src="https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=400&h=400&fit=crop" alt="" loading="lazy">
+        <span class="badge badge-lilac">Baby</span>
+        <div class="hover-info"><div class="title">Naptime</div><div class="meta">2024.10.05</div></div>
+      </div>
+      <div class="justified-item wide">
+        <img src="https://images.unsplash.com/photo-1537655780520-1e392ead81f2?w=800&h=400&fit=crop" alt="" loading="lazy">
+        <span class="badge badge-mint">Baby</span>
+        <div class="hover-info"><div class="title">Tiny Hands</div><div class="meta">2024.09.12</div></div>
+      </div>
+    </div>
+    <!-- Row 4 -->
+    <div class="justified-row">
+      <div class="justified-item">
+        <img src="https://images.unsplash.com/photo-1471286174890-9c112ffca5b4?w=400&h=400&fit=crop" alt="" loading="lazy">
+        <span class="badge badge-sky">Family</span>
+        <div class="hover-info"><div class="title">Story Time</div><div class="meta">2025.02.28</div></div>
+      </div>
+      <div class="justified-item">
+        <img src="https://images.unsplash.com/photo-1504151932400-72d4384f04b3?w=400&h=400&fit=crop" alt="" loading="lazy">
+        <span class="badge badge-peach">Events</span>
+        <div class="hover-info"><div class="title">Birthday</div><div class="meta">2025.04.01</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- LOGIN -->
+<div class="login-page" id="view-login">
+  <div class="login-card">
+    <div class="logo-text">Cotton Candy</div>
+    <p class="sub">Your sweet photo gallery awaits</p>
+    <div class="field"><label>Email</label><input type="email" placeholder="your@email.com"></div>
+    <div class="field"><label>Password</label><input type="password" placeholder="Password"></div>
+    <button class="btn-submit" onclick="showView('gallery')">Sign In</button>
+    <p class="foot">New here? <a href="#">Create account</a></p>
+  </div>
+</div>
+
+<!-- PROFILE -->
+<div class="profile-page" id="view-profile">
+  <div class="profile-top">
+    <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&h=200&fit=crop&crop=face" alt="">
+    <h2>Sakura Family</h2>
+    <p class="bio">Sweet memories, one photo at a time</p>
+    <div class="stat-row">
+      <div class="stat-box"><div class="val">128</div><div class="lbl">Photos</div></div>
+      <div class="stat-box"><div class="val">5</div><div class="lbl">Albums</div></div>
+      <div class="stat-box"><div class="val">3</div><div class="lbl">Members</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="page-label">Pattern C: Cotton Candy - Justified Grid</div>
+<div class="back-link"><a href="../index.html">&larr; Back to all patterns</a></div>
+
+<script>
+function showView(view) {
+  document.getElementById('view-gallery').style.display = view === 'gallery' ? 'block' : 'none';
+  document.getElementById('view-login').className = view === 'login' ? 'login-page active' : 'login-page';
+  document.getElementById('view-profile').className = view === 'profile' ? 'profile-page active' : 'profile-page';
+  document.getElementById('main-nav').style.display = view === 'login' ? 'none' : 'flex';
+  document.querySelectorAll('.topnav-center button').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+}
+</script>
+</body>
+</html>

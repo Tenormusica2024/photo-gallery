@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pastel Dream - Photo Gallery</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700&family=Quicksand:wght@400;500;600&display=swap');
+  :root {
+    --pink-50: #fce4ec;
+    --pink-100: #f8bbd0;
+    --pink-200: #f48fb1;
+    --pink-400: #ec407a;
+    --pink-600: #d81b60;
+    --lavender-50: #f3e5f5;
+    --lavender-100: #e1bee7;
+    --lavender-200: #ce93d8;
+    --lavender-400: #ab47bc;
+    --white: #ffffff;
+    --gray-50: #fafafa;
+    --gray-100: #f5f5f5;
+    --gray-400: #bdbdbd;
+    --gray-600: #757575;
+    --gray-800: #424242;
+    --shadow-soft: 0 4px 20px rgba(216, 27, 96, 0.08);
+    --shadow-hover: 0 8px 30px rgba(216, 27, 96, 0.15);
+    --radius: 1.25rem;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--gray-50);
+    color: var(--gray-800);
+    overflow-x: hidden;
+  }
+
+  /* --- NAV --- */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(255,255,255,0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--pink-50);
+    padding: 0.8rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .logo {
+    font-family: 'Quicksand', sans-serif;
+    font-weight: 600;
+    font-size: 1.4rem;
+    color: var(--pink-600);
+    letter-spacing: -0.02em;
+  }
+  .logo span { color: var(--lavender-400); }
+  .nav-links {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+    list-style: none;
+  }
+  .nav-links a {
+    text-decoration: none;
+    color: var(--gray-600);
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--pink-600); }
+  .nav-links .btn-login {
+    background: linear-gradient(135deg, var(--pink-200), var(--lavender-200));
+    color: var(--white);
+    padding: 0.5rem 1.2rem;
+    border-radius: 2rem;
+    font-weight: 700;
+    transition: opacity 0.2s;
+  }
+  .nav-links .btn-login:hover { opacity: 0.85; color: var(--white); }
+  .nav-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 2px solid var(--pink-100);
+    object-fit: cover;
+  }
+
+  /* --- HERO --- */
+  .hero {
+    text-align: center;
+    padding: 3rem 1.5rem 2rem;
+    background: linear-gradient(180deg, var(--pink-50) 0%, var(--white) 100%);
+  }
+  .hero h1 {
+    font-family: 'Quicksand', sans-serif;
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--pink-600);
+    margin-bottom: 0.5rem;
+  }
+  .hero p {
+    color: var(--gray-600);
+    font-size: 1rem;
+    max-width: 500px;
+    margin: 0 auto 1.5rem;
+  }
+  .album-tabs {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .album-tab {
+    background: var(--white);
+    border: 1.5px solid var(--pink-100);
+    border-radius: 2rem;
+    padding: 0.4rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--gray-600);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .album-tab:hover, .album-tab.active {
+    background: var(--pink-100);
+    border-color: var(--pink-200);
+    color: var(--pink-600);
+  }
+
+  /* --- MASONRY GRID --- */
+  .masonry-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1.5rem;
+  }
+  .masonry {
+    columns: 3;
+    column-gap: 1rem;
+  }
+  @media (max-width: 900px) { .masonry { columns: 2; } }
+  @media (max-width: 500px) { .masonry { columns: 1; } }
+  .masonry-item {
+    break-inside: avoid;
+    margin-bottom: 1rem;
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow-soft);
+    transition: transform 0.3s, box-shadow 0.3s;
+    cursor: pointer;
+    position: relative;
+    background: var(--white);
+  }
+  .masonry-item:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-hover);
+  }
+  .masonry-item img {
+    width: 100%;
+    display: block;
+    transition: transform 0.4s;
+  }
+  .masonry-item:hover img {
+    transform: scale(1.03);
+  }
+  .masonry-item .overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(transparent, rgba(216, 27, 96, 0.5));
+    padding: 2rem 1rem 1rem;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .masonry-item:hover .overlay { opacity: 1; }
+  .overlay .photo-title {
+    color: var(--white);
+    font-weight: 700;
+    font-size: 0.95rem;
+  }
+  .overlay .photo-date {
+    color: rgba(255,255,255,0.85);
+    font-size: 0.8rem;
+  }
+
+  /* --- LIGHTBOX --- */
+  .lightbox {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 999;
+    background: rgba(0,0,0,0.8);
+    backdrop-filter: blur(8px);
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+  }
+  .lightbox.active { display: flex; }
+  .lightbox img {
+    max-width: 90vw;
+    max-height: 80vh;
+    border-radius: var(--radius);
+    box-shadow: 0 8px 40px rgba(0,0,0,0.3);
+  }
+  .lightbox-close {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .lightbox-close:hover { background: rgba(255,255,255,0.3); }
+  .lightbox-info {
+    color: white;
+    text-align: center;
+    margin-top: 1rem;
+    font-size: 0.95rem;
+  }
+
+  /* --- UPLOAD FAB --- */
+  .fab-upload {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--pink-400), var(--lavender-400));
+    color: white;
+    border: none;
+    font-size: 1.8rem;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(216, 27, 96, 0.3);
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .fab-upload:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 24px rgba(216, 27, 96, 0.4);
+  }
+
+  /* --- FOOTER --- */
+  footer {
+    text-align: center;
+    padding: 2rem;
+    color: var(--gray-400);
+    font-size: 0.8rem;
+    margin-top: 2rem;
+  }
+
+  /* --- PAGE INDICATORS --- */
+  .page-label {
+    position: fixed;
+    bottom: 2rem;
+    left: 2rem;
+    background: var(--white);
+    border: 1.5px solid var(--pink-100);
+    border-radius: 1rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.75rem;
+    color: var(--pink-600);
+    font-weight: 600;
+    box-shadow: var(--shadow-soft);
+    z-index: 50;
+  }
+
+  /* --- SIDE NAV (PAGES) --- */
+  .side-pages {
+    position: fixed;
+    top: 50%;
+    right: 1rem;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    z-index: 50;
+  }
+  .side-pages a {
+    display: block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--pink-100);
+    transition: background 0.2s, transform 0.2s;
+  }
+  .side-pages a:hover, .side-pages a.active {
+    background: var(--pink-400);
+    transform: scale(1.3);
+  }
+
+  /* --- LOGIN PAGE SECTION --- */
+  .login-section {
+    display: none;
+    min-height: 100vh;
+    background: linear-gradient(135deg, var(--pink-50) 0%, var(--lavender-50) 100%);
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+  .login-section.active { display: flex; }
+  .login-card {
+    background: var(--white);
+    border-radius: 2rem;
+    padding: 3rem 2.5rem;
+    box-shadow: var(--shadow-hover);
+    max-width: 400px;
+    width: 100%;
+    text-align: center;
+  }
+  .login-card h2 {
+    font-family: 'Quicksand', sans-serif;
+    color: var(--pink-600);
+    font-size: 1.6rem;
+    margin-bottom: 0.3rem;
+  }
+  .login-card .login-sub {
+    color: var(--gray-600);
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+  }
+  .input-group {
+    text-align: left;
+    margin-bottom: 1rem;
+  }
+  .input-group label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--gray-600);
+    margin-bottom: 0.3rem;
+  }
+  .input-group input {
+    width: 100%;
+    padding: 0.7rem 1rem;
+    border: 1.5px solid var(--pink-100);
+    border-radius: 1rem;
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .input-group input:focus {
+    border-color: var(--pink-400);
+  }
+  .btn-primary {
+    width: 100%;
+    padding: 0.8rem;
+    border: none;
+    border-radius: 1.5rem;
+    background: linear-gradient(135deg, var(--pink-400), var(--lavender-400));
+    color: white;
+    font-family: 'Nunito', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    margin-top: 0.5rem;
+    transition: opacity 0.2s;
+  }
+  .btn-primary:hover { opacity: 0.9; }
+  .login-footer {
+    margin-top: 1rem;
+    font-size: 0.8rem;
+    color: var(--gray-400);
+  }
+  .login-footer a {
+    color: var(--pink-400);
+    text-decoration: none;
+  }
+
+  /* --- PROFILE SECTION --- */
+  .profile-section {
+    display: none;
+    background: var(--gray-50);
+    min-height: 100vh;
+    padding: 2rem;
+  }
+  .profile-section.active { display: block; }
+  .profile-header {
+    text-align: center;
+    padding: 2rem 0;
+  }
+  .profile-avatar {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    border: 4px solid var(--pink-100);
+    object-fit: cover;
+    margin-bottom: 1rem;
+  }
+  .profile-header h2 {
+    font-family: 'Quicksand', sans-serif;
+    color: var(--pink-600);
+    font-size: 1.5rem;
+  }
+  .profile-stats {
+    display: flex;
+    gap: 2rem;
+    justify-content: center;
+    margin-top: 1rem;
+  }
+  .stat {
+    text-align: center;
+  }
+  .stat-num {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--pink-600);
+  }
+  .stat-label {
+    font-size: 0.75rem;
+    color: var(--gray-400);
+  }
+  .profile-albums {
+    max-width: 800px;
+    margin: 2rem auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1rem;
+  }
+  .album-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow-soft);
+    transition: transform 0.3s;
+    cursor: pointer;
+  }
+  .album-card:hover { transform: translateY(-2px); }
+  .album-card img {
+    width: 100%;
+    height: 140px;
+    object-fit: cover;
+  }
+  .album-card-body {
+    padding: 0.8rem;
+  }
+  .album-card-body h3 {
+    font-size: 0.95rem;
+    color: var(--gray-800);
+  }
+  .album-card-body p {
+    font-size: 0.75rem;
+    color: var(--gray-400);
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="main-nav">
+  <div class="logo">pastel<span>album</span></div>
+  <ul class="nav-links">
+    <li><a href="#" onclick="showPage('gallery')">Gallery</a></li>
+    <li><a href="#" onclick="showPage('profile')">Albums</a></li>
+    <li><a href="#" onclick="showPage('login')" class="btn-login">Login</a></li>
+  </ul>
+</nav>
+
+<!-- GALLERY PAGE -->
+<section id="page-gallery">
+  <div class="hero">
+    <h1>Our Precious Moments</h1>
+    <p>Family photos, smiles, and memories all in one beautiful place</p>
+    <div class="album-tabs">
+      <span class="album-tab active">All</span>
+      <span class="album-tab">Baby</span>
+      <span class="album-tab">Family</span>
+      <span class="album-tab">Events</span>
+      <span class="album-tab">Travel</span>
+    </div>
+  </div>
+
+  <div class="masonry-container">
+    <div class="masonry" id="masonry-grid">
+      <div class="masonry-item" onclick="openLightbox(this)">
+        <img src="https://images.unsplash.com/photo-1519689680058-324335c77eba?w=400&h=500&fit=crop" alt="Baby photo" loading="lazy">
+        <div class="overlay">
+          <div class="photo-title">First Smile</div>
+          <div class="photo-date">2024.12.25</div>
+        </div>
+      </div>
+      <div class="masonry-item" onclick="openLightbox(this)">
+        <img src="https://images.unsplash.com/photo-1544776193-352d25ca82cd?w=400&h=300&fit=crop" alt="Family">
+        <div class="overlay">
+          <div class="photo-title">Sunday Morning</div>
+          <div class="photo-date">2024.11.10</div>
+        </div>
+      </div>
+      <div class="masonry-item" onclick="openLightbox(this)">
+        <img src="https://images.unsplash.com/photo-1491013516836-7db643ee125a?w=400&h=600&fit=crop" alt="Baby steps">
+        <div class="overlay">
+          <div class="photo-title">First Steps</div>
+          <div class="photo-date">2025.01.15</div>
+        </div>
+      </div>
+      <div class="masonry-item" onclick="openLightbox(this)">
+        <img src="https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=400&h=350&fit=crop" alt="Little princess">
+        <div class="overlay">
+          <div class="photo-title">Little Princess</div>
+          <div class="photo-date">2025.02.14</div>
+        </div>
+      </div>
+      <div class="masonry-item" onclick="openLightbox(this)">
+        <img src="https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=400&h=450&fit=crop" alt="Family picnic">
+        <div class="overlay">
+          <div class="photo-title">Park Day</div>
+          <div class="photo-date">2025.03.20</div>
+        </div>
+      </div>
+      <div class="masonry-item" onclick="openLightbox(this)">
+        <img src="https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=400&h=500&fit=crop" alt="Bath time">
+        <div class="overlay">
+          <div class="photo-title">Sleepy Time</div>
+          <div class="photo-date">2024.10.05</div>
+        </div>
+      </div>
+      <div class="masonry-item" onclick="openLightbox(this)">
+        <img src="https://images.unsplash.com/photo-1504151932400-72d4384f04b3?w=400&h=320&fit=crop" alt="Birthday">
+        <div class="overlay">
+          <div class="photo-title">Happy Birthday</div>
+          <div class="photo-date">2025.04.01</div>
+        </div>
+      </div>
+      <div class="masonry-item" onclick="openLightbox(this)">
+        <img src="https://images.unsplash.com/photo-1537655780520-1e392ead81f2?w=400&h=500&fit=crop" alt="Hands">
+        <div class="overlay">
+          <div class="photo-title">Tiny Hands</div>
+          <div class="photo-date">2024.09.12</div>
+        </div>
+      </div>
+      <div class="masonry-item" onclick="openLightbox(this)">
+        <img src="https://images.unsplash.com/photo-1471286174890-9c112ffca5b4?w=400&h=400&fit=crop" alt="Reading">
+        <div class="overlay">
+          <div class="photo-title">Story Time</div>
+          <div class="photo-date">2025.02.28</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button class="fab-upload" title="Upload Photos">+</button>
+</section>
+
+<!-- LOGIN PAGE -->
+<section id="page-login" class="login-section">
+  <div class="login-card">
+    <h2>Welcome Back</h2>
+    <p class="login-sub">Sign in to your family gallery</p>
+    <div class="input-group">
+      <label>Email</label>
+      <input type="email" placeholder="your@email.com">
+    </div>
+    <div class="input-group">
+      <label>Password</label>
+      <input type="password" placeholder="Enter password">
+    </div>
+    <button class="btn-primary" onclick="showPage('gallery')">Sign In</button>
+    <p class="login-footer">
+      New here? <a href="#">Create an account</a>
+    </p>
+  </div>
+</section>
+
+<!-- PROFILE PAGE -->
+<section id="page-profile" class="profile-section">
+  <div class="profile-header">
+    <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&h=200&fit=crop&crop=face" alt="Profile" class="profile-avatar">
+    <h2>Sakura Family</h2>
+    <p style="color: var(--gray-600); font-size: 0.9rem;">Capturing every precious moment</p>
+    <div class="profile-stats">
+      <div class="stat"><div class="stat-num">128</div><div class="stat-label">Photos</div></div>
+      <div class="stat"><div class="stat-num">5</div><div class="stat-label">Albums</div></div>
+      <div class="stat"><div class="stat-num">3</div><div class="stat-label">Members</div></div>
+    </div>
+  </div>
+  <div class="profile-albums">
+    <div class="album-card">
+      <img src="https://images.unsplash.com/photo-1519689680058-324335c77eba?w=400&h=280&fit=crop" alt="Baby Album">
+      <div class="album-card-body"><h3>Baby's First Year</h3><p>48 photos</p></div>
+    </div>
+    <div class="album-card">
+      <img src="https://images.unsplash.com/photo-1511895426328-dc8714191300?w=400&h=280&fit=crop" alt="Family">
+      <div class="album-card-body"><h3>Family Moments</h3><p>32 photos</p></div>
+    </div>
+    <div class="album-card">
+      <img src="https://images.unsplash.com/photo-1504151932400-72d4384f04b3?w=400&h=280&fit=crop" alt="Events">
+      <div class="album-card-body"><h3>Birthday Parties</h3><p>24 photos</p></div>
+    </div>
+    <div class="album-card">
+      <img src="https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=400&h=280&fit=crop" alt="Travel">
+      <div class="album-card-body"><h3>Travel Memories</h3><p>24 photos</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
+  <img id="lightbox-img" src="" alt="">
+  <div class="lightbox-info" id="lightbox-info"></div>
+</div>
+
+<div class="page-label">Pattern A: Pastel Dream - Masonry Grid</div>
+
+<footer>
+  <a href="../index.html" style="color: var(--pink-400); text-decoration: none; font-weight: 600;">&larr; Back to all patterns</a>
+</footer>
+
+<script>
+function showPage(page) {
+  document.getElementById('page-gallery').style.display = page === 'gallery' ? 'block' : 'none';
+  document.getElementById('page-login').className = page === 'login' ? 'login-section active' : 'login-section';
+  document.getElementById('page-profile').className = page === 'profile' ? 'profile-section active' : 'profile-section';
+  document.getElementById('main-nav').style.display = page === 'login' ? 'none' : 'flex';
+}
+
+function openLightbox(el) {
+  const img = el.querySelector('img');
+  const title = el.querySelector('.photo-title')?.textContent || '';
+  const date = el.querySelector('.photo-date')?.textContent || '';
+  document.getElementById('lightbox-img').src = img.src.replace(/w=\d+/, 'w=1200').replace(/h=\d+/, 'h=900');
+  document.getElementById('lightbox-info').innerHTML = '<strong>' + title + '</strong><br>' + date;
+  document.getElementById('lightbox').classList.add('active');
+}
+
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('active');
+}
+
+document.getElementById('lightbox').addEventListener('click', function(e) {
+  if (e.target === this) closeLightbox();
+});
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeLightbox();
+});
+
+// Album tab switching
+document.querySelectorAll('.album-tab').forEach(tab => {
+  tab.addEventListener('click', function() {
+    document.querySelectorAll('.album-tab').forEach(t => t.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>
