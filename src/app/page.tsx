@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { supabase, isConfigured } from "@/lib/supabase";
 import type { Photo } from "@/types/database";
 import MasonryGrid from "@/components/MasonryGrid";
 
@@ -28,10 +28,12 @@ export default function GalleryPage() {
   const [isDemo, setIsDemo] = useState(true);
 
   useEffect(() => {
+    if (!isConfigured) return;
+
     async function loadPhotos() {
       try {
         // authセッション復元を待ってからクエリ実行
-        const { data: { session } } = await supabase.auth.getSession();
+        await supabase.auth.getSession();
 
         const { data, error } = await supabase
           .from("photos")
