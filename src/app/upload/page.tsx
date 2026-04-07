@@ -85,6 +85,13 @@ export default function UploadPage() {
     e.preventDefault();
     if (!user || files.length === 0) return;
 
+    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+    if (!cloudName || !uploadPreset) {
+      setError("Cloudinaryの設定が見つかりません");
+      return;
+    }
+
     setUploading(true);
     setError("");
     setProgress(0);
@@ -93,30 +100,41 @@ export default function UploadPage() {
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         const isVideo = isVideoFile(file);
-        const ext = file.name.split(".").pop();
-        const path = `${user}/${Date.now()}-${i}.${ext}`;
-        const bucket = isVideo ? "videos" : "photos";
 
-        // Supabase Storageにアップロード
-        const { error: uploadError } = await supabase.storage
-          .from(bucket)
-          .upload(path, file);
+        // Cloudinaryにアップロード（unsigned upload）
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("upload_preset", uploadPreset);
+        formData.append("folder", "pastelalbum");
 
-        if (uploadError) throw uploadError;
+        const resourceType = isVideo ? "video" : "image";
+        const res = await fetch(
+          `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`,
+          { method: "POST", body: formData }
+        );
 
-        // 公開URLを取得
-        const { data: urlData } = supabase.storage
-          .from(bucket)
-          .getPublicUrl(path);
+        if (!res.ok) {
+          const errData = await res.json();
+          throw new Error(errData.error?.message || "Cloudinaryアップロード失敗");
+        }
 
-        // photosテーブルにレコード挿入（動画もphotosテーブルで管理）
+        const data = await res.json();
+        // public_idをstorage_pathとして保存、secure_urlをurlとして保存
+        const publicId: string = data.public_id;
+        const secureUrl: string = data.secure_url;
+        const width: number | undefined = data.width;
+        const height: number | undefined = data.height;
+
+        // photosテーブルにレコード挿入
         const { error: insertError } = await supabase.from("photos").insert({
           user_id: user,
           album_id: selectedAlbum || null,
           family_id: familyId,
           title: title || file.name.replace(/\.[^/.]+$/, ""),
-          storage_path: path,
-          url: urlData.publicUrl,
+          storage_path: publicId,
+          url: secureUrl,
+          width: width ?? null,
+          height: height ?? null,
           file_size: file.size,
           media_type: isVideo ? "video" : "image",
           visibility,
