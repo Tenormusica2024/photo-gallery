@@ -53,8 +53,24 @@ export default function UploadPage() {
     if (data) setAlbums(data);
   }
 
+  // ファイルサイズ上限（画像: 10MB、動画: 100MB）
+  const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
+  const MAX_VIDEO_SIZE = 100 * 1024 * 1024;
+
   function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const selected = Array.from(e.target.files || []);
+
+    // ファイルサイズチェック
+    for (const file of selected) {
+      const limit = isVideoFile(file) ? MAX_VIDEO_SIZE : MAX_IMAGE_SIZE;
+      const limitLabel = isVideoFile(file) ? "100MB" : "10MB";
+      if (file.size > limit) {
+        setError(`${file.name} のサイズが${limitLabel}を超えています`);
+        return;
+      }
+    }
+    setError("");
+
     setFiles((prev) => [...prev, ...selected]);
 
     // プレビュー生成（全てobjectURLで統一し、インデックスずれを防止）
