@@ -78,7 +78,7 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <div className="min-h-[calc(100vh-56px)] flex items-center justify-center">
-        <p className="text-gray-400">Loading...</p>
+        <p className="text-gray-400">読み込み中...</p>
       </div>
     );
   }
@@ -99,11 +99,11 @@ export default function ProfilePage() {
         <div className="flex gap-8 justify-center mt-4">
           <div className="text-center">
             <div className="text-xl font-bold text-pink-600">{photoCount}</div>
-            <div className="text-xs text-gray-400">Photos</div>
+            <div className="text-xs text-gray-400">写真</div>
           </div>
           <div className="text-center">
             <div className="text-xl font-bold text-pink-600">{albums.length}</div>
-            <div className="text-xs text-gray-400">Albums</div>
+            <div className="text-xs text-gray-400">アルバム</div>
           </div>
         </div>
       </div>
@@ -112,13 +112,13 @@ export default function ProfilePage() {
       <div className="max-w-3xl mx-auto">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-quicksand text-lg font-semibold text-gray-700">
-            My Albums
+            マイアルバム
           </h3>
           <button
             onClick={() => setShowNewAlbum(!showNewAlbum)}
             className="text-sm font-semibold text-pink-500 hover:text-pink-600 transition-colors"
           >
-            {showNewAlbum ? "Cancel" : "+ New Album"}
+            {showNewAlbum ? "キャンセル" : "+ 新しいアルバム"}
           </button>
         </div>
 
@@ -129,7 +129,7 @@ export default function ProfilePage() {
               type="text"
               value={newAlbumTitle}
               onChange={(e) => setNewAlbumTitle(e.target.value)}
-              placeholder="Album title"
+              placeholder="アルバム名"
               required
               className="flex-1 px-4 py-2 border-[1.5px] border-pink-100 rounded-2xl text-sm outline-none focus:border-pink-400 transition-colors"
             />
@@ -137,7 +137,7 @@ export default function ProfilePage() {
               type="submit"
               className="px-6 py-2 bg-gradient-to-r from-pink-400 to-purple-400 text-white rounded-2xl text-sm font-bold hover:opacity-90 transition-opacity"
             >
-              Create
+              作成
             </button>
           </form>
         )}
@@ -145,7 +145,7 @@ export default function ProfilePage() {
         {/* Album grid */}
         {albums.length === 0 ? (
           <div className="text-center py-12 text-gray-400">
-            <p className="text-sm">No albums yet. Create your first album!</p>
+            <p className="text-sm">アルバムがまだありません。最初のアルバムを作成しましょう!</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
@@ -163,7 +163,7 @@ export default function ProfilePage() {
                     {album.title}
                   </h4>
                   <p className="text-xs text-gray-400">
-                    {album.photo_count || 0} photos
+                    {album.photo_count || 0} 枚
                   </p>
                 </div>
               </Link>

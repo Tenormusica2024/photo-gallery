@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabase";
 import type { Photo } from "@/types/database";
 import MasonryGrid from "@/components/MasonryGrid";
 
-const CATEGORIES = ["All", "Photos", "Videos"];
+const CATEGORIES = ["すべて", "写真", "動画"];
 
 // Demo photos (used when Supabase is not configured or DB is empty)
 // デモ用写真データ（Supabase未設定時のフォールバック）
@@ -52,10 +52,10 @@ export default function GalleryPage() {
       {/* Hero */}
       <div className="text-center py-12 px-6 bg-gradient-to-b from-pink-50 to-white">
         <h1 className="font-quicksand text-3xl sm:text-4xl font-bold text-pink-600 mb-2">
-          Our Precious Moments
+          大切な思い出
         </h1>
         <p className="text-gray-500 text-base max-w-md mx-auto mb-6">
-          Family photos, smiles, and memories all in one beautiful place
+          家族の写真、笑顔、思い出をひとつの場所に
         </p>
 
         {/* Category tabs */}
@@ -80,7 +80,7 @@ export default function GalleryPage() {
       {isDemo && (
         <div className="max-w-5xl mx-auto px-4 mt-4">
           <div className="bg-lavender-50 border border-lavender-100 rounded-2xl px-4 py-3 text-sm text-purple-400 text-center">
-            Demo mode - Supabase not configured. Showing sample photos.
+            デモモード - Supabase未設定のため、サンプル写真を表示しています。
           </div>
         </div>
       )}
@@ -89,9 +89,9 @@ export default function GalleryPage() {
       <div className="max-w-5xl mx-auto px-4 py-6">
         <MasonryGrid
           photos={
-            activeCategory === "All"
+            activeCategory === "すべて"
               ? photos
-              : activeCategory === "Photos"
+              : activeCategory === "写真"
               ? photos.filter((p) => p.media_type === "image")
               : photos.filter((p) => p.media_type === "video")
           }
@@ -102,7 +102,7 @@ export default function GalleryPage() {
       <a
         href="/upload"
         className="fixed bottom-8 right-8 w-14 h-14 rounded-full bg-gradient-to-br from-pink-400 to-purple-400 text-white flex items-center justify-center text-3xl shadow-[0_4px_16px_rgba(216,27,96,0.3)] hover:scale-110 hover:shadow-[0_6px_24px_rgba(216,27,96,0.4)] transition-all"
-        aria-label="Upload Photos"
+        aria-label="写真をアップロード"
       >
         +
       </a>

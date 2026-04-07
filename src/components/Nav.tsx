@@ -74,18 +74,18 @@ export default function Nav() {
       {/* デスクトップメニュー */}
       <div className="hidden sm:flex items-center gap-6">
         <Link href="/" className={linkClass("/")}>
-          Gallery
+          ギャラリー
         </Link>
         {user && (
           <>
             <Link href="/profile" className={linkClass("/profile")}>
-              Albums
+              アルバム
             </Link>
             <Link href="/upload" className={linkClass("/upload")}>
-              Upload
+              アップロード
             </Link>
             <Link href="/admin" className={linkClass("/admin")}>
-              {isAdmin ? "Admin" : "Family"}
+              {isAdmin ? "管理" : "ファミリー"}
             </Link>
           </>
         )}
@@ -94,14 +94,14 @@ export default function Nav() {
             onClick={handleSignOut}
             className="text-sm font-semibold text-gray-500 hover:text-pink-600 transition-colors"
           >
-            Sign Out
+            ログアウト
           </button>
         ) : (
           <Link
             href="/login"
             className="bg-gradient-to-r from-pink-300 to-purple-300 text-white px-5 py-2 rounded-full text-sm font-bold hover:opacity-85 transition-opacity"
           >
-            Login
+            ログイン
           </Link>
         )}
       </div>
@@ -111,18 +111,18 @@ export default function Nav() {
         <div className="absolute top-full left-0 right-0 bg-white/95 backdrop-blur-md border-b border-pink-100 shadow-lg sm:hidden z-50">
           <div className="flex flex-col px-6 py-4 gap-3">
             <Link href="/" className={linkClass("/")} onClick={() => setMenuOpen(false)}>
-              Gallery
+              ギャラリー
             </Link>
             {user && (
               <>
                 <Link href="/profile" className={linkClass("/profile")} onClick={() => setMenuOpen(false)}>
-                  Albums
+                  アルバム
                 </Link>
                 <Link href="/upload" className={linkClass("/upload")} onClick={() => setMenuOpen(false)}>
-                  Upload
+                  アップロード
                 </Link>
                 <Link href="/admin" className={linkClass("/admin")} onClick={() => setMenuOpen(false)}>
-                  {isAdmin ? "Admin" : "Family"}
+                  {isAdmin ? "管理" : "ファミリー"}
                 </Link>
               </>
             )}
@@ -131,7 +131,7 @@ export default function Nav() {
                 onClick={() => { handleSignOut(); setMenuOpen(false); }}
                 className="text-sm font-semibold text-gray-500 hover:text-pink-600 transition-colors text-left"
               >
-                Sign Out
+                ログアウト
               </button>
             ) : (
               <Link
@@ -139,7 +139,7 @@ export default function Nav() {
                 className="text-sm font-semibold text-pink-600"
                 onClick={() => setMenuOpen(false)}
               >
-                Login
+                ログイン
               </Link>
             )}
           </div>

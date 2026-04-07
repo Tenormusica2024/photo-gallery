@@ -113,7 +113,7 @@ export default function AdminPage() {
   if (loading) {
     return (
       <div className="min-h-[calc(100vh-56px)] flex items-center justify-center">
-        <p className="text-gray-400">Loading...</p>
+        <p className="text-gray-400">読み込み中...</p>
       </div>
     );
   }
@@ -124,17 +124,17 @@ export default function AdminPage() {
       <div className="min-h-[calc(100vh-56px)] flex items-center justify-center bg-gradient-to-b from-pink-50 to-white px-4">
         <div className="bg-white rounded-3xl p-8 shadow-[0_8px_30px_rgba(216,27,96,0.15)] max-w-md w-full text-center">
           <h2 className="font-quicksand text-2xl font-bold text-pink-600 mb-2">
-            Create Your Family
+            ファミリーを作成
           </h2>
           <p className="text-gray-500 text-sm mb-6">
-            Start a family group to share photos with your loved ones
+            家族グループを作って、大切な人と写真を共有しましょう
           </p>
           <form onSubmit={createFamily} className="space-y-4">
             <input
               type="text"
               value={newFamilyName}
               onChange={(e) => setNewFamilyName(e.target.value)}
-              placeholder="Family name (e.g. Tanaka Family)"
+              placeholder="ファミリー名（例：田中ファミリー）"
               required
               className="w-full px-4 py-3 border-[1.5px] border-pink-100 rounded-2xl text-sm outline-none focus:border-pink-400"
             />
@@ -142,7 +142,7 @@ export default function AdminPage() {
               type="submit"
               className="w-full py-3 bg-gradient-to-r from-pink-400 to-purple-400 text-white rounded-2xl font-bold text-sm hover:opacity-90 transition-opacity"
             >
-              Create Family Group
+              ファミリーグループを作成
             </button>
           </form>
         </div>
@@ -154,7 +154,7 @@ export default function AdminPage() {
     <div className="min-h-[calc(100vh-56px)] bg-[var(--color-background)] px-4 py-8">
       <div className="max-w-4xl mx-auto space-y-8">
         <h1 className="font-quicksand text-2xl font-bold text-pink-600 text-center">
-          Admin Dashboard
+          管理ダッシュボード
         </h1>
 
         {/* Family Info */}
@@ -164,7 +164,7 @@ export default function AdminPage() {
           </h2>
           <div className="flex flex-wrap gap-4 items-center">
             <div className="flex-1 min-w-[200px]">
-              <p className="text-xs text-gray-400 mb-1">Invite Code</p>
+              <p className="text-xs text-gray-400 mb-1">招待コード</p>
               <div className="flex gap-2 items-center">
                 <code className="bg-pink-50 px-3 py-1.5 rounded-lg text-sm text-pink-600 font-mono">
                   {family.invite_code}
@@ -173,12 +173,12 @@ export default function AdminPage() {
                   onClick={copyInviteLink}
                   className="text-xs text-pink-500 hover:text-pink-600 font-semibold"
                 >
-                  {inviteCopied ? "Copied!" : "Copy Link"}
+                  {inviteCopied ? "コピー済み" : "リンクをコピー"}
                 </button>
               </div>
             </div>
             <div>
-              <p className="text-xs text-gray-400 mb-1">Members</p>
+              <p className="text-xs text-gray-400 mb-1">メンバー</p>
               <p className="text-lg font-bold text-pink-600">{members.length}</p>
             </div>
           </div>
@@ -188,35 +188,35 @@ export default function AdminPage() {
         {isAdmin && (
           <div className="bg-white rounded-2xl p-6 shadow-[0_4px_20px_rgba(216,27,96,0.08)]">
             <h2 className="font-semibold text-lg text-gray-700 mb-4">
-              Storage Usage
+              ストレージ使用量
             </h2>
             <div className="grid grid-cols-3 gap-4 mb-6">
               <div className="text-center p-4 bg-pink-50 rounded-xl">
                 <div className="text-2xl font-bold text-pink-600">
                   {formatBytes(totalStorage)}
                 </div>
-                <div className="text-xs text-gray-400 mt-1">Total Used</div>
+                <div className="text-xs text-gray-400 mt-1">合計使用量</div>
               </div>
               <div className="text-center p-4 bg-lavender-50 rounded-xl">
                 <div className="text-2xl font-bold text-purple-400">
                   {storageData.reduce((s, r) => s + r.photo_count, 0)}
                 </div>
-                <div className="text-xs text-gray-400 mt-1">Photos</div>
+                <div className="text-xs text-gray-400 mt-1">写真</div>
               </div>
               <div className="text-center p-4 bg-pink-50 rounded-xl">
                 <div className="text-2xl font-bold text-pink-600">
                   {storageData.reduce((s, r) => s + r.video_count, 0)}
                 </div>
-                <div className="text-xs text-gray-400 mt-1">Videos</div>
+                <div className="text-xs text-gray-400 mt-1">動画</div>
               </div>
             </div>
 
             {/* Per-member usage */}
-            <h3 className="text-sm font-semibold text-gray-600 mb-2">By Member</h3>
+            <h3 className="text-sm font-semibold text-gray-600 mb-2">メンバー別</h3>
             <div className="space-y-2">
               {storageData.map((su) => {
                 const member = members.find((m) => m.user_id === su.user_id);
-                const name = (member?.profiles as unknown as { display_name: string })?.display_name || "Unknown";
+                const name = (member?.profiles as unknown as { display_name: string })?.display_name || "不明";
                 const pct = totalStorage > 0 ? (su.total_bytes / totalStorage) * 100 : 0;
                 return (
                   <div key={su.user_id} className="flex items-center gap-3">
@@ -239,7 +239,7 @@ export default function AdminPage() {
 
         {/* Members */}
         <div className="bg-white rounded-2xl p-6 shadow-[0_4px_20px_rgba(216,27,96,0.08)]">
-          <h2 className="font-semibold text-lg text-gray-700 mb-4">Members</h2>
+          <h2 className="font-semibold text-lg text-gray-700 mb-4">メンバー</h2>
           <div className="space-y-3">
             {members.map((m) => {
               const p = m.profiles as unknown as { display_name: string; email: string } | undefined;
@@ -251,7 +251,7 @@ export default function AdminPage() {
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-gray-700">
-                        {p?.display_name || "Unknown"}
+                        {p?.display_name || "不明"}
                       </p>
                       <p className="text-xs text-gray-400">{p?.email}</p>
                     </div>
@@ -269,7 +269,7 @@ export default function AdminPage() {
                         onClick={() => removeMember(m.id)}
                         className="text-xs text-red-400 hover:text-red-500"
                       >
-                        Remove
+                        削除
                       </button>
                     )}
                   </div>

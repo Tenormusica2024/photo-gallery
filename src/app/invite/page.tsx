@@ -81,16 +81,16 @@ function InviteContent() {
     <div className="min-h-[calc(100vh-56px)] flex items-center justify-center bg-gradient-to-br from-pink-50 via-lavender-50 to-pink-50 px-4">
       <div className="bg-white rounded-3xl p-8 shadow-[0_8px_30px_rgba(216,27,96,0.15)] max-w-md w-full text-center">
         {status === "loading" && (
-          <p className="text-gray-400">Looking up invite...</p>
+          <p className="text-gray-400">招待を確認中...</p>
         )}
 
         {status === "not_found" && (
           <>
             <h2 className="font-quicksand text-xl font-bold text-gray-600 mb-2">
-              Invalid Invite
+              無効な招待
             </h2>
             <p className="text-gray-500 text-sm">
-              This invite link is invalid or has expired.
+              この招待リンクは無効か、有効期限が切れています。
             </p>
           </>
         )}
@@ -98,16 +98,16 @@ function InviteContent() {
         {status === "found" && family && (
           <>
             <h2 className="font-quicksand text-2xl font-bold text-pink-600 mb-2">
-              Join {family.name}?
+              {family.name}に参加しますか?
             </h2>
             <p className="text-gray-500 text-sm mb-6">
-              You&apos;ve been invited to join this family&apos;s photo gallery
+              このファミリーのフォトギャラリーに招待されています
             </p>
             <button
               onClick={joinFamily}
               className="w-full py-3 bg-gradient-to-r from-pink-400 to-purple-400 text-white rounded-2xl font-bold text-sm hover:opacity-90 transition-opacity"
             >
-              Join Family
+              ファミリーに参加
             </button>
           </>
         )}
@@ -115,16 +115,16 @@ function InviteContent() {
         {status === "joined" && (
           <>
             <h2 className="font-quicksand text-2xl font-bold text-pink-600 mb-2">
-              Welcome!
+              ようこそ!
             </h2>
             <p className="text-gray-500 text-sm mb-6">
-              You&apos;ve joined {family?.name}. Start sharing photos!
+              {family?.name}に参加しました。写真を共有しましょう!
             </p>
             <button
               onClick={() => router.push("/")}
               className="w-full py-3 bg-gradient-to-r from-pink-400 to-purple-400 text-white rounded-2xl font-bold text-sm hover:opacity-90 transition-opacity"
             >
-              Go to Gallery
+              ギャラリーへ
             </button>
           </>
         )}
@@ -139,7 +139,7 @@ function InviteContent() {
 
 export default function InvitePage() {
   return (
-    <Suspense fallback={<div className="min-h-[calc(100vh-56px)] flex items-center justify-center"><p className="text-gray-400">Loading...</p></div>}>
+    <Suspense fallback={<div className="min-h-[calc(100vh-56px)] flex items-center justify-center"><p className="text-gray-400">読み込み中...</p></div>}>
       <InviteContent />
     </Suspense>
   );

@@ -129,7 +129,7 @@ export default function UploadPage() {
 
       router.push("/");
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Upload failed");
+      setError(err instanceof Error ? err.message : "アップロードに失敗しました");
     } finally {
       setUploading(false);
     }
@@ -140,17 +140,17 @@ export default function UploadPage() {
   const videoCount = files.filter((f) => isVideoFile(f)).length;
 
   function uploadLabel(): string {
-    if (uploading) return `Uploading... ${progress}%`;
+    if (uploading) return `アップロード中... ${progress}%`;
     const parts: string[] = [];
-    if (imageCount > 0) parts.push(`${imageCount} photo${imageCount !== 1 ? "s" : ""}`);
-    if (videoCount > 0) parts.push(`${videoCount} video${videoCount !== 1 ? "s" : ""}`);
-    return parts.length > 0 ? `Upload ${parts.join(" & ")}` : "Select files to upload";
+    if (imageCount > 0) parts.push(`写真 ${imageCount}枚`);
+    if (videoCount > 0) parts.push(`動画 ${videoCount}本`);
+    return parts.length > 0 ? `${parts.join("と")}をアップロード` : "ファイルを選択してください";
   }
 
   if (!user) {
     return (
       <div className="min-h-[calc(100vh-56px)] flex items-center justify-center">
-        <p className="text-gray-400">Loading...</p>
+        <p className="text-gray-400">読み込み中...</p>
       </div>
     );
   }
@@ -159,7 +159,7 @@ export default function UploadPage() {
     <div className="min-h-[calc(100vh-56px)] bg-gradient-to-b from-pink-50 to-white px-4 py-8">
       <div className="max-w-2xl mx-auto">
         <h1 className="font-quicksand text-2xl font-bold text-pink-600 mb-6 text-center">
-          Upload
+          アップロード
         </h1>
 
         <form onSubmit={handleUpload} className="space-y-6">
@@ -170,10 +170,10 @@ export default function UploadPage() {
           >
             <div className="text-4xl text-pink-300 mb-2">+</div>
             <p className="text-gray-500 text-sm">
-              Click to select photos or videos
+              クリックして写真や動画を選択
             </p>
             <p className="text-gray-400 text-xs mt-1">
-              JPG, PNG, WebP, MP4, MOV (photos: 10MB / videos: 100MB)
+              JPG, PNG, WebP, MP4, MOV（写真: 10MB / 動画: 100MB）
             </p>
             <input
               ref={fileInputRef}
@@ -224,13 +224,13 @@ export default function UploadPage() {
           {/* タイトル */}
           <div>
             <label className="block text-xs font-semibold text-gray-500 mb-1">
-              Title (optional)
+              タイトル（任意）
             </label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Photo / video title"
+              placeholder="写真・動画のタイトル"
               className="w-full px-4 py-3 border-[1.5px] border-pink-100 rounded-2xl text-sm outline-none focus:border-pink-400 transition-colors"
             />
           </div>
@@ -238,14 +238,14 @@ export default function UploadPage() {
           {/* アルバム選択 */}
           <div>
             <label className="block text-xs font-semibold text-gray-500 mb-1">
-              Album (optional)
+              アルバム（任意）
             </label>
             <select
               value={selectedAlbum}
               onChange={(e) => setSelectedAlbum(e.target.value)}
               className="w-full px-4 py-3 border-[1.5px] border-pink-100 rounded-2xl text-sm outline-none focus:border-pink-400 transition-colors bg-white"
             >
-              <option value="">No album</option>
+              <option value="">アルバムなし</option>
               {albums.map((album) => (
                 <option key={album.id} value={album.id}>
                   {album.title}
@@ -257,7 +257,7 @@ export default function UploadPage() {
           {/* 公開範囲 */}
           <div>
             <label className="block text-xs font-semibold text-gray-500 mb-1">
-              Visibility
+              公開範囲
             </label>
             <div className="flex gap-3">
               <button
@@ -269,7 +269,7 @@ export default function UploadPage() {
                     : "bg-white border-pink-100 text-gray-500"
                 }`}
               >
-                Everyone
+                全員
               </button>
               <button
                 type="button"
@@ -280,7 +280,7 @@ export default function UploadPage() {
                     : "bg-white border-pink-100 text-gray-500"
                 }`}
               >
-                Admin Only
+                管理者のみ
               </button>
             </div>
           </div>

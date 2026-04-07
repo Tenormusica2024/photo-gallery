@@ -23,14 +23,14 @@ export default function LoginPage() {
       if (isSignUp) {
         const { error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
-        setMessage("Check your email for a confirmation link!");
+        setMessage("確認メールを送信しました。メールのリンクをクリックしてください。");
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         router.push("/");
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "An error occurred");
+      setError(err instanceof Error ? err.message : "エラーが発生しました");
     } finally {
       setLoading(false);
     }
@@ -40,37 +40,37 @@ export default function LoginPage() {
     <div className="min-h-[calc(100vh-56px)] flex items-center justify-center bg-gradient-to-br from-pink-50 via-lavender-50 to-pink-50 px-4">
       <div className="bg-white rounded-3xl p-10 shadow-[0_8px_30px_rgba(216,27,96,0.15)] max-w-md w-full text-center">
         <h2 className="font-quicksand text-2xl font-bold text-pink-600 mb-1">
-          {isSignUp ? "Create Account" : "Welcome Back"}
+          {isSignUp ? "アカウント作成" : "おかえりなさい"}
         </h2>
         <p className="text-gray-500 text-sm mb-6">
           {isSignUp
-            ? "Join to share your family moments"
-            : "Sign in to your family gallery"}
+            ? "家族の思い出を共有しましょう"
+            : "家族のギャラリーにログイン"}
         </p>
 
         <form onSubmit={handleSubmit} className="text-left space-y-4">
           <div>
             <label className="block text-xs font-semibold text-gray-500 mb-1">
-              Email
+              メールアドレス
             </label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="your@email.com"
+              placeholder="example@email.com"
               required
               className="w-full px-4 py-3 border-[1.5px] border-pink-100 rounded-2xl text-sm outline-none focus:border-pink-400 transition-colors"
             />
           </div>
           <div>
             <label className="block text-xs font-semibold text-gray-500 mb-1">
-              Password
+              パスワード
             </label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter password"
+              placeholder="パスワードを入力"
               required
               minLength={6}
               className="w-full px-4 py-3 border-[1.5px] border-pink-100 rounded-2xl text-sm outline-none focus:border-pink-400 transition-colors"
@@ -89,12 +89,12 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full py-3 bg-gradient-to-r from-pink-400 to-purple-400 text-white rounded-2xl font-bold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
           >
-            {loading ? "..." : isSignUp ? "Create Account" : "Sign In"}
+            {loading ? "..." : isSignUp ? "アカウント作成" : "ログイン"}
           </button>
         </form>
 
         <p className="mt-4 text-xs text-gray-400">
-          {isSignUp ? "Already have an account?" : "New here?"}{" "}
+          {isSignUp ? "アカウントをお持ちの方は" : "初めての方は"}{" "}
           <button
             onClick={() => {
               setIsSignUp(!isSignUp);
@@ -103,7 +103,7 @@ export default function LoginPage() {
             }}
             className="text-pink-400 font-semibold hover:underline"
           >
-            {isSignUp ? "Sign In" : "Create an account"}
+            {isSignUp ? "ログイン" : "アカウント作成"}
           </button>
         </p>
       </div>

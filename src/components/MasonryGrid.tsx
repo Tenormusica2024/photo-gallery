@@ -45,12 +45,12 @@ export default function MasonryGrid({ photos }: Props) {
                   <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M8 5v14l11-7z" />
                   </svg>
-                  {photo.duration ? `${Math.floor(photo.duration / 60)}:${String(photo.duration % 60).padStart(2, "0")}` : "Video"}
+                  {photo.duration ? `${Math.floor(photo.duration / 60)}:${String(photo.duration % 60).padStart(2, "0")}` : "動画"}
                 </div>
               )}
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-pink-600/50 to-transparent p-4 pt-8 opacity-0 group-hover:opacity-100 transition-opacity">
                 <p className="text-white font-bold text-sm">
-                  {photo.title || "Untitled"}
+                  {photo.title || "無題"}
                 </p>
                 <p className="text-white/85 text-xs">
                   {new Date(photo.created_at).toLocaleDateString("ja-JP")}

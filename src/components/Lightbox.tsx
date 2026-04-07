@@ -38,7 +38,7 @@ export default function Lightbox({ photos, currentIndex, onClose, onNavigate }: 
   function handleDownload() {
     const a = document.createElement("a");
     a.href = photo.url;
-    a.download = photo.title || (isVideo ? "video" : "photo");
+    a.download = photo.title || (isVideo ? "動画" : "写真");
     a.target = "_blank";
     a.rel = "noopener noreferrer";
     document.body.appendChild(a);
@@ -56,8 +56,8 @@ export default function Lightbox({ photos, currentIndex, onClose, onNavigate }: 
         <button
           onClick={handleDownload}
           className="w-11 h-11 rounded-full bg-white/20 text-white hover:bg-white/30 transition-colors flex items-center justify-center"
-          aria-label="Download"
-          title="Download"
+          aria-label="ダウンロード"
+          title="ダウンロード"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -66,7 +66,7 @@ export default function Lightbox({ photos, currentIndex, onClose, onNavigate }: 
         <button
           onClick={onClose}
           className="w-11 h-11 rounded-full bg-white/20 text-white text-2xl hover:bg-white/30 transition-colors flex items-center justify-center"
-          aria-label="Close"
+          aria-label="閉じる"
         >
           &times;
         </button>
@@ -77,7 +77,7 @@ export default function Lightbox({ photos, currentIndex, onClose, onNavigate }: 
         <button
           onClick={() => onNavigate(currentIndex - 1)}
           className="absolute left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/20 text-white text-xl hover:bg-white/30 transition-colors flex items-center justify-center"
-          aria-label="Previous"
+          aria-label="前へ"
         >
           &#8249;
         </button>
@@ -86,7 +86,7 @@ export default function Lightbox({ photos, currentIndex, onClose, onNavigate }: 
         <button
           onClick={() => onNavigate(currentIndex + 1)}
           className="absolute right-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/20 text-white text-xl hover:bg-white/30 transition-colors flex items-center justify-center"
-          aria-label="Next"
+          aria-label="次へ"
         >
           &#8250;
         </button>
@@ -111,7 +111,7 @@ export default function Lightbox({ photos, currentIndex, onClose, onNavigate }: 
 
       {/* 情報 */}
       <div className="text-white text-center mt-4">
-        <p className="font-bold">{photo.title || "Untitled"}</p>
+        <p className="font-bold">{photo.title || "無題"}</p>
         <p className="text-sm text-white/75">
           {new Date(photo.created_at).toLocaleDateString("ja-JP")}
           {" "}
