@@ -101,9 +101,8 @@ export default function UploadPage() {
     if (!user || files.length === 0) return;
 
     const cloudName = (process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "").trim();
-    const uploadPreset = (process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "").trim();
 
-    if (!cloudName || !uploadPreset) {
+    if (!cloudName) {
       setError("Cloudinaryの設定が見つかりません。環境変数を確認してください。");
       setUploading(false);
       return;
@@ -124,11 +123,25 @@ export default function UploadPage() {
         const file = files[i];
         const isVideo = isVideoFile(file);
 
-        // Cloudinaryにアップロード（unsigned upload）
+        // サーバーから署名を取得（signed upload）
+        const sigRes = await fetch("/api/cloudinary-signature", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ folder: "pastelalbum" }),
+        });
+        if (!sigRes.ok) {
+          const sigErr = await sigRes.json();
+          throw new Error(sigErr.error || "署名の取得に失敗しました");
+        }
+        const { signature, timestamp, api_key } = await sigRes.json();
+
+        // Cloudinaryに署名付きアップロード
         const formData = new FormData();
         formData.append("file", file);
-        formData.append("upload_preset", uploadPreset);
         formData.append("folder", "pastelalbum");
+        formData.append("api_key", api_key);
+        formData.append("timestamp", String(timestamp));
+        formData.append("signature", signature);
 
         const resourceType = isVideo ? "video" : "image";
         const res = await fetch(
