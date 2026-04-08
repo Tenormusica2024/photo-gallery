@@ -162,18 +162,7 @@ create or replace trigger on_photo_change
   after insert or delete on public.photos
   for each row execute function public.update_storage_usage();
 
--- Storage bucket for videos
-insert into storage.buckets (id, name, public, file_size_limit)
-values ('videos', 'videos', true, 104857600) -- 100MB limit per video
-on conflict do nothing;
-
--- Storage policies for videos
-create policy "Anyone can view videos" on storage.objects
-  for select using (bucket_id = 'videos');
-create policy "Authenticated users can upload videos" on storage.objects
-  for insert to authenticated with check (bucket_id = 'videos');
-create policy "Users can delete own videos" on storage.objects
-  for delete to authenticated using (bucket_id = 'videos' and (storage.foldername(name))[1] = auth.uid()::text);
+-- Note: Video storage uses Cloudinary (not Supabase Storage)
 
 -- Add profile fields for family context
 alter table public.profiles add column if not exists role text default 'user' check (role in ('admin', 'user'));

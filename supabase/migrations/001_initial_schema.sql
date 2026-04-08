@@ -89,15 +89,4 @@ create or replace trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
 
--- Storage bucket for photos
-insert into storage.buckets (id, name, public)
-values ('photos', 'photos', true)
-on conflict do nothing;
-
--- Storage policies
-create policy "Anyone can view photos" on storage.objects
-  for select using (bucket_id = 'photos');
-create policy "Authenticated users can upload photos" on storage.objects
-  for insert to authenticated with check (bucket_id = 'photos');
-create policy "Users can delete own photos" on storage.objects
-  for delete to authenticated using (bucket_id = 'photos' and (storage.foldername(name))[1] = auth.uid()::text);
+-- Note: Storage uses Cloudinary (not Supabase Storage)
