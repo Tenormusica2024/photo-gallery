@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import Image from "next/image";
 import type { Photo } from "@/types/database";
-import Lightbox from "./Lightbox";
+
+// Lightboxは写真クリック時のみ必要なので遅延読み込み（初期バンドルを削減）
+const Lightbox = lazy(() => import("./Lightbox"));
 
 interface Props {
   photos: Photo[];
@@ -39,6 +41,8 @@ export default function MasonryGrid({ photos }: Props) {
                   width={photo.width || 600}
                   height={photo.height || 600}
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  // 最初の3枚はLCP改善のためpriority指定（プリロード）
+                  priority={i < 3}
                   className="w-full h-auto block group-hover:scale-[1.03] transition-transform duration-400"
                 />
               )}
@@ -70,12 +74,14 @@ export default function MasonryGrid({ photos }: Props) {
       </div>
 
       {selectedIndex !== null && (
-        <Lightbox
-          photos={photos}
-          currentIndex={selectedIndex}
-          onClose={() => setSelectedIndex(null)}
-          onNavigate={setSelectedIndex}
-        />
+        <Suspense fallback={null}>
+          <Lightbox
+            photos={photos}
+            currentIndex={selectedIndex}
+            onClose={() => setSelectedIndex(null)}
+            onNavigate={setSelectedIndex}
+          />
+        </Suspense>
       )}
     </>
   );

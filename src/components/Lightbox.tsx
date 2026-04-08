@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useCallback } from "react";
+import Image from "next/image";
 import type { Photo } from "@/types/database";
 
 interface Props {
@@ -104,10 +105,14 @@ export default function Lightbox({ photos, currentIndex, onClose, onNavigate }: 
           className="max-w-[90vw] max-h-[80vh] rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.3)]"
         />
       ) : (
-        <img
+        <Image
           src={photo.url}
           alt={photo.title || "Photo"}
-          className="max-w-[90vw] max-h-[80vh] rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.3)]"
+          width={photo.width || 1200}
+          height={photo.height || 900}
+          sizes="90vw"
+          priority
+          className="max-w-[90vw] max-h-[80vh] w-auto h-auto rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.3)] object-contain"
         />
       )}
 

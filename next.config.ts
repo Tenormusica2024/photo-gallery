@@ -15,6 +15,10 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  experimental: {
+    // Supabase SDKのtree-shaking改善（使用モジュールのみバンドル）
+    optimizePackageImports: ["@supabase/supabase-js"],
+  },
 };
 
 export default nextConfig;
