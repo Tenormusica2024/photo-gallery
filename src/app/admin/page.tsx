@@ -210,7 +210,8 @@ export default function AdminPage() {
   const tabs = [
     { id: "overview" as const, label: "概要" },
     { id: "family" as const, label: "ファミリー" },
-    { id: "errors" as const, label: `エラー${errors.length > 0 ? ` (${errors.length})` : ""}` },
+    // エラーログはadminのみ表示（console.error内容の情報漏洩防止）
+    ...(isAdmin ? [{ id: "errors" as const, label: `エラー${errors.length > 0 ? ` (${errors.length})` : ""}` }] : []),
   ];
 
   return (

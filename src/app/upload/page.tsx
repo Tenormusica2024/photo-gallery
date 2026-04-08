@@ -144,7 +144,11 @@ export default function UploadPage() {
           visibility,
         });
 
-        if (insertError) throw insertError;
+        if (insertError) {
+          // Cloudinaryにアップロード済みだがDB挿入失敗 → orphanアセットを検知可能にする
+          console.error(`Cloudinary orphan asset: publicId=${publicId}, error=${insertError.message}`);
+          throw insertError;
+        }
 
         setProgress(Math.round(((i + 1) / files.length) * 100));
       }
