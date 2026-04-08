@@ -158,28 +158,17 @@ export default function AdminPage() {
     e.preventDefault();
     if (!userId || !newFamilyName.trim()) return;
 
-    const { data: fg, error } = await supabase
-      .from("family_groups")
-      .insert({ name: newFamilyName.trim(), created_by: userId })
-      .select()
-      .single();
+    // RPC経由でファミリー作成+admin追加を1トランザクションで実行
+    // （family_members INSERTはRLSで直接禁止されているためRPC必須）
+    const { data: result, error } = await supabase
+      .rpc("create_family_with_admin", { family_name: newFamilyName.trim() });
 
-    if (error || !fg) return;
-
-    const { error: memberError } = await supabase.from("family_members").insert({
-      family_id: fg.id,
-      user_id: userId,
-      role: "admin",
-    });
-
-    // メンバー追加失敗時は孤児レコード防止のためファミリーを補償削除
-    if (memberError) {
-      await supabase.from("family_groups").delete().eq("id", fg.id);
-      console.error("Family member insert failed, rolled back family group:", memberError);
+    if (error || !result || result.error) {
+      console.error("Family creation failed:", error || result?.error);
       return;
     }
 
-    setFamily(fg);
+    setFamily({ id: result.id, name: result.name, invite_code: result.invite_code, created_by: userId, created_at: new Date().toISOString() });
     setIsAdmin(true);
     setNewFamilyName("");
     router.refresh();

@@ -3,14 +3,18 @@
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import type { FamilyGroup } from "@/types/database";
+// RPC経由で取得するファミリー情報（id, nameのみ）
+interface InviteFamily {
+  id: string;
+  name: string;
+}
 
 function InviteContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const code = searchParams.get("code");
 
-  const [family, setFamily] = useState<FamilyGroup | null>(null);
+  const [family, setFamily] = useState<InviteFamily | null>(null);
   const [status, setStatus] = useState<"loading" | "found" | "not_found" | "joined" | "error">("loading");
   const [error, setError] = useState("");
 
@@ -21,19 +25,16 @@ function InviteContent() {
     }
 
     async function checkInvite() {
-      // Find family by invite code
+      // RPC経由で招待コードを照合（family_groupsへの直接SELECTはRLSで制限済み）
       const { data, error: fetchError } = await supabase
-        .from("family_groups")
-        .select("*")
-        .eq("invite_code", code)
-        .single();
+        .rpc("lookup_family_by_invite", { invite: code });
 
-      if (fetchError || !data) {
+      if (fetchError || !data || data.length === 0) {
         setStatus("not_found");
         return;
       }
 
-      setFamily(data);
+      setFamily({ id: data[0].id, name: data[0].name });
       setStatus("found");
     }
     checkInvite();
@@ -51,27 +52,9 @@ function InviteContent() {
       return;
     }
 
-    // Check if already a member
-    const { data: existing } = await supabase
-      .from("family_members")
-      .select("id")
-      .eq("family_id", family.id)
-      .eq("user_id", user.id)
-      .single();
-
-    if (existing) {
-      setStatus("joined");
-      return;
-    }
-
-    // Join as member
-    const { error: joinError } = await supabase
-      .from("family_members")
-      .insert({
-        family_id: family.id,
-        user_id: user.id,
-        role: "member",
-      });
+    // RPC経由でファミリーに参加（直接INSERTはRLSで禁止済み）
+    const { data: result, error: joinError } = await supabase
+      .rpc("join_family_by_invite", { invite_code: code });
 
     if (joinError) {
       setError(joinError.message);
@@ -79,6 +62,13 @@ function InviteContent() {
       return;
     }
 
+    if (result?.error) {
+      setError(result.error);
+      setStatus("error");
+      return;
+    }
+
+    // 'joined' or 'already_member' どちらも参加済みとして扱う
     setStatus("joined");
   }
 
