@@ -35,7 +35,11 @@ export async function proxy(request: NextRequest) {
 
   // getUser()でトークンリフレッシュを発火させる
   // ここではセッションの有無だけ確認（認証ガードは各ページで実施）
-  await supabase.auth.getUser();
+  try {
+    await supabase.auth.getUser();
+  } catch {
+    // トークンリフレッシュ失敗時は匿名ユーザーとして続行（各ページで認証ガード）
+  }
 
   return supabaseResponse;
 }

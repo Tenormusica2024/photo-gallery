@@ -394,6 +394,7 @@ export default function AdminPage() {
                 <div className="bg-white rounded-2xl p-5 shadow-[0_4px_20px_rgba(216,27,96,0.08)]">
                   <h2 className="font-semibold text-lg text-gray-700 mb-4">{family.name}</h2>
                   <div className="flex flex-wrap gap-4 items-center">
+                    {isAdmin && (
                     <div className="flex-1 min-w-[200px]">
                       <p className="text-xs text-gray-400 mb-1">招待コード</p>
                       <div className="flex gap-2 items-center">
@@ -408,6 +409,7 @@ export default function AdminPage() {
                         </button>
                       </div>
                     </div>
+                    )}
                     <div>
                       <p className="text-xs text-gray-400 mb-1">メンバー</p>
                       <p className="text-lg font-bold text-pink-600">{members.length}</p>

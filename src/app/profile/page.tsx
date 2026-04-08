@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
+import { uploadToCloudinary } from "@/lib/cloudinary";
 import type { Profile, Album } from "@/types/database";
 
 export default function ProfilePage() {
@@ -106,32 +107,7 @@ export default function ProfilePage() {
 
     setAvatarUploading(true);
     try {
-      const cloudName = (process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "").trim();
-
-      // サーバーから署名を取得（signed upload）
-      const sigRes = await fetch("/api/cloudinary-signature", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ folder: "pastelalbum/avatars" }),
-      });
-      if (!sigRes.ok) throw new Error("署名の取得に失敗しました");
-      const { signature, timestamp, api_key } = await sigRes.json();
-
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("folder", "pastelalbum/avatars");
-      formData.append("api_key", api_key);
-      formData.append("timestamp", String(timestamp));
-      formData.append("signature", signature);
-
-      const res = await fetch(
-        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-        { method: "POST", body: formData }
-      );
-      if (!res.ok) throw new Error("アバターのアップロードに失敗しました");
-
-      const data = await res.json();
-      const avatarUrl: string = data.secure_url;
+      const { secure_url: avatarUrl } = await uploadToCloudinary(file, "pastelalbum/avatars");
 
       // プロフィールに保存
       const { error } = await supabase

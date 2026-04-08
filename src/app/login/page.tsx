@@ -7,7 +7,9 @@ import { supabase } from "@/lib/supabase";
 function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get("redirect") || "/";
+  // オープンリダイレクト防止: 同一オリジンの相対パスのみ許可
+  const rawRedirect = searchParams.get("redirect") || "/";
+  const redirectTo = rawRedirect.startsWith("/") && !rawRedirect.startsWith("//") ? rawRedirect : "/";
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

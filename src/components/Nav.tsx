@@ -18,7 +18,6 @@ export default function Nav() {
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -28,21 +27,13 @@ export default function Nav() {
     async function init() {
       const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user ?? null);
-      if (session?.user) {
-        const { data: membership } = await supabase
-          .from("family_members")
-          .select("role")
-          .eq("user_id", session.user.id)
-          .limit(1)
-          .single();
-        if (membership?.role === "admin") setIsAdmin(true);
-      }
+      // admin判定が必要になった場合はここで family_members を参照する
     }
     init();
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
-      if (!session?.user) setIsAdmin(false);
+      // ログアウト時のクリーンアップ
     });
 
     return () => listener.subscription.unsubscribe();

@@ -15,7 +15,10 @@ function InviteContent() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!code) { setStatus("not_found"); return; }
+    if (!code) {
+      setStatus("not_found");
+      return;
+    }
 
     async function checkInvite() {
       // Find family by invite code
@@ -39,7 +42,9 @@ function InviteContent() {
   async function joinFamily() {
     if (!family) return;
 
-    const { data: { user } } = await supabase.auth.getUser();
+    // getSession()を使用（getUser()はサーバーリクエストが発生するため）
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
     if (!user) {
       // Redirect to login with return URL
       router.push(`/login?redirect=/invite?code=${code}`);

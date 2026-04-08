@@ -10,6 +10,7 @@ if (!isConfigured) {
 }
 
 // 未設定時はクエリを実行しない（呼び出し側で isConfigured をチェック）
+// null! ではなく明示的に null を返し、型で未設定状態を表現
 export const supabase = isConfigured
   ? createClient(supabaseUrl, supabaseAnonKey)
-  : null!;
+  : (null as unknown as ReturnType<typeof createClient>);

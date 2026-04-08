@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { uploadToCloudinary } from "@/lib/cloudinary";
 import type { Album } from "@/types/database";
 
 // 画像・動画の判定
@@ -100,14 +101,6 @@ export default function UploadPage() {
     e.preventDefault();
     if (!user || files.length === 0) return;
 
-    const cloudName = (process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "").trim();
-
-    if (!cloudName) {
-      setError("Cloudinaryの設定が見つかりません。環境変数を確認してください。");
-      setUploading(false);
-      return;
-    }
-
     // アルバム所有権の検証（選択されている場合）
     if (selectedAlbum && !albums.some((a) => a.id === selectedAlbum)) {
       setError("選択されたアルバムが見つかりません。ページを再読み込みしてください。");
@@ -122,44 +115,10 @@ export default function UploadPage() {
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         const isVideo = isVideoFile(file);
-
-        // サーバーから署名を取得（signed upload）
-        const sigRes = await fetch("/api/cloudinary-signature", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ folder: "pastelalbum" }),
-        });
-        if (!sigRes.ok) {
-          const sigErr = await sigRes.json();
-          throw new Error(sigErr.error || "署名の取得に失敗しました");
-        }
-        const { signature, timestamp, api_key } = await sigRes.json();
-
-        // Cloudinaryに署名付きアップロード
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("folder", "pastelalbum");
-        formData.append("api_key", api_key);
-        formData.append("timestamp", String(timestamp));
-        formData.append("signature", signature);
-
         const resourceType = isVideo ? "video" : "image";
-        const res = await fetch(
-          `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`,
-          { method: "POST", body: formData }
-        );
 
-        if (!res.ok) {
-          const errData = await res.json();
-          throw new Error(errData.error?.message || "Cloudinaryアップロード失敗");
-        }
-
-        const data = await res.json();
-        // public_idをstorage_pathとして保存、secure_urlをurlとして保存
-        const publicId: string = data.public_id;
-        const secureUrl: string = data.secure_url;
-        const width: number | undefined = data.width;
-        const height: number | undefined = data.height;
+        const { public_id: publicId, secure_url: secureUrl, width, height } =
+          await uploadToCloudinary(file, "pastelalbum", resourceType);
 
         // photosテーブルにレコード挿入
         const { error: insertError } = await supabase.from("photos").insert({
