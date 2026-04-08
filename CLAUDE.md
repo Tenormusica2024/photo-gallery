@@ -8,6 +8,9 @@
 - **RLSセキュリティ方針**: profiles/family_groups/photosは全て最小権限。匿名アクセス不可。family_id/album_idの所属検証をRLSレベルで強制
 - **アップロード**: Cloudinary署名付きアップロード（API Secretはサーバーサイドのみ。`/api/cloudinary-signature`で署名生成）
 - **認証**: @supabase/ssr + proxy.ts（Next.js 16）でサーバーサイドセッションリフレッシュ
+- **マルチファミリー**: 1ユーザーが複数ファミリーに所属可能な設計（`get_my_family_ids()`は複数返す前提）。UIは現状1ファミリー表示だが、DB/RLS層は複数対応済み
+- **RPC返り値統一**: 全SECURITY DEFINER RPCは `{status: "error", code: "..."}` | `{status: "success_variant", ...}` 形式。フロント側は `.status === "error"` で判定
+- **招待コード照合の匿名アクセス**: `lookup_family_by_invite`は未認証でも呼べる（招待リンクを開いた未ログインユーザーにファミリー名を表示するUX要件）
 
 ## TODO（将来対応）
 

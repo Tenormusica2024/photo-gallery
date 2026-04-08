@@ -15,7 +15,7 @@ function InviteContent() {
   const code = searchParams.get("code");
 
   const [family, setFamily] = useState<InviteFamily | null>(null);
-  const [status, setStatus] = useState<"loading" | "found" | "not_found" | "joined" | "error">("loading");
+  const [status, setStatus] = useState<"loading" | "found" | "not_found" | "joined" | "already_member" | "error">("loading");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -62,14 +62,14 @@ function InviteContent() {
       return;
     }
 
-    if (result?.error) {
-      setError(result.error);
+    // 統一された返り値形式: {status: "error", code: "..."} | {status: "joined"|"already_member", ...}
+    if (result?.status === "error") {
+      setError(result.code);
       setStatus("error");
       return;
     }
 
-    // 'joined' or 'already_member' どちらも参加済みとして扱う
-    setStatus("joined");
+    setStatus(result?.status === "already_member" ? "already_member" : "joined");
   }
 
   return (
@@ -114,6 +114,23 @@ function InviteContent() {
             </h2>
             <p className="text-gray-500 text-sm mb-6">
               {family?.name}に参加しました。写真を共有しましょう!
+            </p>
+            <button
+              onClick={() => router.push("/")}
+              className="w-full py-3 bg-gradient-to-r from-pink-400 to-purple-400 text-white rounded-2xl font-bold text-sm hover:opacity-90 transition-opacity"
+            >
+              ギャラリーへ
+            </button>
+          </>
+        )}
+
+        {status === "already_member" && (
+          <>
+            <h2 className="font-quicksand text-2xl font-bold text-pink-600 mb-2">
+              すでに参加済みです
+            </h2>
+            <p className="text-gray-500 text-sm mb-6">
+              {family?.name}のメンバーです。
             </p>
             <button
               onClick={() => router.push("/")}

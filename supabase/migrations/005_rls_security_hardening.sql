@@ -59,7 +59,7 @@ declare
   v_row_count integer;
 begin
   if v_user_id is null then
-    return jsonb_build_object('error', 'auth_required');
+    return jsonb_build_object('status', 'error', 'code', 'auth_required');
   end if;
 
   select fg.id, fg.name into v_family_id, v_family_name
@@ -68,7 +68,7 @@ begin
   limit 1;
 
   if v_family_id is null then
-    return jsonb_build_object('error', 'invalid_invite');
+    return jsonb_build_object('status', 'error', 'code', 'invalid_invite');
   end if;
 
   -- INSERT ON CONFLICTで既存メンバーの場合もエラーなく処理
@@ -106,11 +106,11 @@ declare
   v_invite_code text;
 begin
   if v_user_id is null then
-    return jsonb_build_object('error', 'auth_required');
+    return jsonb_build_object('status', 'error', 'code', 'auth_required');
   end if;
 
   if trim(family_name) = '' then
-    return jsonb_build_object('error', 'name_required');
+    return jsonb_build_object('status', 'error', 'code', 'name_required');
   end if;
 
   -- ファミリーグループを作成

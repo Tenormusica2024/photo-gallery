@@ -163,8 +163,8 @@ export default function AdminPage() {
     const { data: result, error } = await supabase
       .rpc("create_family_with_admin", { family_name: newFamilyName.trim() });
 
-    if (error || !result || result.error) {
-      console.error("Family creation failed:", error || result?.error);
+    if (error || !result || result.status === "error") {
+      console.error("Family creation failed:", error || result?.code);
       return;
     }
 
