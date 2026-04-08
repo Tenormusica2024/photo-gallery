@@ -50,69 +50,73 @@ export default function AdminPage() {
 
   useEffect(() => {
     async function load() {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) { router.push("/login?redirect=/admin"); return; }
-      const user = session.user;
-      setUserId(user.id);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) { router.push("/login?redirect=/admin"); return; }
+        const user = session.user;
+        setUserId(user.id);
 
-      // 統計用: カウントとサイズ集計（SELECT * 不要）
-      const [countResult, recentResult] = await Promise.all([
-        supabase
-          .from("photos")
-          .select("media_type, file_size"),
-        supabase
-          .from("photos")
-          .select("*")
-          .order("created_at", { ascending: false })
-          .limit(10),
-      ]);
+        // 統計用: カウントとサイズ集計（SELECT * 不要）
+        const [countResult, recentResult] = await Promise.all([
+          supabase
+            .from("photos")
+            .select("media_type, file_size"),
+          supabase
+            .from("photos")
+            .select("*")
+            .order("created_at", { ascending: false })
+            .limit(10),
+        ]);
 
-      if (countResult.data) {
-        const photos = countResult.data;
-        setPhotoCount(photos.filter((p) => p.media_type === "image").length);
-        setVideoCount(photos.filter((p) => p.media_type === "video").length);
-        setTotalSize(photos.reduce((sum, p) => sum + (p.file_size || 0), 0));
-      }
-      if (recentResult.data) {
-        setRecentUploads(recentResult.data);
-      }
+        if (countResult.data) {
+          const photos = countResult.data;
+          setPhotoCount(photos.filter((p) => p.media_type === "image").length);
+          setVideoCount(photos.filter((p) => p.media_type === "video").length);
+          setTotalSize(photos.reduce((sum, p) => sum + (p.file_size || 0), 0));
+        }
+        if (recentResult.data) {
+          setRecentUploads(recentResult.data);
+        }
 
-      // ファミリーメンバーシップ確認
-      const { data: membership } = await supabase
-        .from("family_members")
-        .select("*, family_groups(*)")
-        .eq("user_id", user.id)
-        .limit(1)
-        .single();
-
-      if (membership) {
-        const fg = membership.family_groups as unknown as FamilyGroup;
-        setFamily(fg);
-        setIsAdmin(membership.role === "admin");
-
-        const { data: membersData } = await supabase
+        // ファミリーメンバーシップ確認
+        const { data: membership } = await supabase
           .from("family_members")
-          .select("*, profiles(*)")
-          .eq("family_id", fg.id)
-          .order("joined_at");
-        if (membersData) setMembers(membersData as FamilyMember[]);
+          .select("*, family_groups(*)")
+          .eq("user_id", user.id)
+          .limit(1)
+          .single();
 
-        if (membership.role === "admin") {
-          const memberIds = (membersData || []).map((m: FamilyMember) => m.user_id);
-          if (memberIds.length > 0) {
-            const { data: storageRows } = await supabase
-              .from("storage_usage")
-              .select("*")
-              .in("user_id", memberIds);
-            if (storageRows) {
-              setStorageData(storageRows);
-              setTotalStorage(storageRows.reduce((sum: number, r: StorageUsage) => sum + r.total_bytes, 0));
+        if (membership) {
+          const fg = membership.family_groups as unknown as FamilyGroup;
+          setFamily(fg);
+          setIsAdmin(membership.role === "admin");
+
+          const { data: membersData } = await supabase
+            .from("family_members")
+            .select("*, profiles(*)")
+            .eq("family_id", fg.id)
+            .order("joined_at");
+          if (membersData) setMembers(membersData as FamilyMember[]);
+
+          if (membership.role === "admin") {
+            const memberIds = (membersData || []).map((m: FamilyMember) => m.user_id);
+            if (memberIds.length > 0) {
+              const { data: storageRows } = await supabase
+                .from("storage_usage")
+                .select("*")
+                .in("user_id", memberIds);
+              if (storageRows) {
+                setStorageData(storageRows);
+                setTotalStorage(storageRows.reduce((sum: number, r: StorageUsage) => sum + r.total_bytes, 0));
+              }
             }
           }
         }
+      } catch (err) {
+        console.error("Admin page load error:", err);
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false);
     }
     load();
   }, [router]);
@@ -121,10 +125,21 @@ export default function AdminPage() {
   useEffect(() => {
     if (!errorPatchInstalled) {
       const origError = console.error;
+      // 機密情報をマスクしてからログに保存
+      const maskSensitive = (text: string): string =>
+        text
+          .replace(/eyJ[A-Za-z0-9_-]{10,}/g, "[TOKEN]")
+          .replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, "[EMAIL]")
+          .replace(/Bearer\s+\S+/gi, "Bearer [MASKED]")
+          .replace(/key[=:]\s*\S+/gi, "key=[MASKED]");
       console.error = (...args: unknown[]) => {
+        const raw = args.map((a) => {
+          if (typeof a !== "object" || a === null) return String(a);
+          try { return JSON.stringify(a); } catch { return String(a); }
+        }).join(" ");
         errorLogs.push({
           time: new Date().toLocaleTimeString("ja-JP"),
-          message: args.map((a) => (typeof a === "object" ? JSON.stringify(a) : String(a))).join(" "),
+          message: maskSensitive(raw),
         });
         if (errorLogs.length > 50) errorLogs.shift();
         origError.apply(console, args);
@@ -150,11 +165,18 @@ export default function AdminPage() {
 
     if (error || !fg) return;
 
-    await supabase.from("family_members").insert({
+    const { error: memberError } = await supabase.from("family_members").insert({
       family_id: fg.id,
       user_id: userId,
       role: "admin",
     });
+
+    // メンバー追加失敗時は孤児レコード防止のためファミリーを補償削除
+    if (memberError) {
+      await supabase.from("family_groups").delete().eq("id", fg.id);
+      console.error("Family member insert failed, rolled back family group:", memberError);
+      return;
+    }
 
     setFamily(fg);
     setIsAdmin(true);

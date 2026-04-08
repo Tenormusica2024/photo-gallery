@@ -24,44 +24,48 @@ export default function ProfilePage() {
 
   useEffect(() => {
     async function load() {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) {
-        router.push("/login");
-        return;
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) {
+          router.push("/login");
+          return;
+        }
+        const user = session.user;
+
+        // Load profile
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .single();
+        if (profileData) setProfile(profileData);
+
+        // Load albums with photo counts
+        const { data: albumsData } = await supabase
+          .from("albums")
+          .select("*, photos(count)")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false });
+        if (albumsData) {
+          setAlbums(
+            albumsData.map((a: Record<string, unknown>) => ({
+              ...a,
+              photo_count: (a.photos as Array<{ count: number }>)?.[0]?.count ?? 0,
+            })) as Album[]
+          );
+        }
+
+        // Total photo count
+        const { count } = await supabase
+          .from("photos")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", user.id);
+        setPhotoCount(count || 0);
+      } catch (err) {
+        console.error("Profile load error:", err);
+      } finally {
+        setLoading(false);
       }
-      const user = session.user;
-
-      // Load profile
-      const { data: profileData } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-      if (profileData) setProfile(profileData);
-
-      // Load albums with photo counts
-      const { data: albumsData } = await supabase
-        .from("albums")
-        .select("*, photos(count)")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
-      if (albumsData) {
-        setAlbums(
-          albumsData.map((a: Record<string, unknown>) => ({
-            ...a,
-            photo_count: (a.photos as Array<{ count: number }>)?.[0]?.count ?? 0,
-          })) as Album[]
-        );
-      }
-
-      // Total photo count
-      const { count } = await supabase
-        .from("photos")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", user.id);
-      setPhotoCount(count || 0);
-
-      setLoading(false);
     }
     load();
   }, [router]);
@@ -81,7 +85,7 @@ export default function ProfilePage() {
     setSaving(false);
   }
 
-  // アバターアップロード（Cloudinary経��）
+  // アバターアップロード（Cloudinary経由）
   async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file || !profile) return;

@@ -25,23 +25,30 @@ export default function UploadPage() {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function init() {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) { router.push("/login"); return; }
-      const authUser = session.user;
-      setUser(authUser.id);
-      loadAlbums(authUser.id);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) { router.push("/login"); return; }
+        const authUser = session.user;
+        setUser(authUser.id);
+        loadAlbums(authUser.id);
 
-      // ユーザーの所属ファミリーを取得
-      const { data: membership } = await supabase
-        .from("family_members")
-        .select("family_id")
-        .eq("user_id", authUser.id)
-        .limit(1)
-        .single();
-      if (membership) setFamilyId(membership.family_id);
+        // ユーザーの所属ファミリーを取得
+        const { data: membership } = await supabase
+          .from("family_members")
+          .select("family_id")
+          .eq("user_id", authUser.id)
+          .limit(1)
+          .single();
+        if (membership) setFamilyId(membership.family_id);
+      } catch (err) {
+        console.error("Upload init error:", err);
+      } finally {
+        setLoading(false);
+      }
     }
     init();
   }, [router]);
@@ -176,7 +183,7 @@ export default function UploadPage() {
     return parts.length > 0 ? `${parts.join("と")}をアップロード` : "ファイルを選択してください";
   }
 
-  if (!user) {
+  if (loading) {
     return (
       <div className="min-h-[calc(100vh-56px)] flex items-center justify-center">
         <p className="text-gray-400">読み込み中...</p>

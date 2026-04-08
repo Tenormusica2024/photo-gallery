@@ -16,32 +16,37 @@ export default function AlbumPage() {
 
   useEffect(() => {
     async function load() {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) {
-        router.push("/login");
-        return;
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) {
+          router.push("/login");
+          return;
+        }
+
+        const albumId = params.id as string;
+
+        // Load album
+        const { data: albumData } = await supabase
+          .from("albums")
+          .select("*")
+          .eq("id", albumId)
+          .single();
+
+        if (albumData) setAlbum(albumData);
+
+        // Load photos in album
+        const { data: photosData } = await supabase
+          .from("photos")
+          .select("*")
+          .eq("album_id", albumId)
+          .order("created_at", { ascending: false });
+
+        if (photosData) setPhotos(photosData);
+      } catch (err) {
+        console.error("Album load error:", err);
+      } finally {
+        setLoading(false);
       }
-
-      const albumId = params.id as string;
-
-      // Load album
-      const { data: albumData } = await supabase
-        .from("albums")
-        .select("*")
-        .eq("id", albumId)
-        .single();
-
-      if (albumData) setAlbum(albumData);
-
-      // Load photos in album
-      const { data: photosData } = await supabase
-        .from("photos")
-        .select("*")
-        .eq("album_id", albumId)
-        .order("created_at", { ascending: false });
-
-      if (photosData) setPhotos(photosData);
-      setLoading(false);
     }
     load();
   }, [params.id, router]);

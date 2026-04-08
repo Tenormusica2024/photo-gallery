@@ -3,8 +3,16 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { supabase, isConfigured } from "@/lib/supabase";
 import type { User } from "@supabase/supabase-js";
+
+// メニュー項目の単一ソース（デスクトップ・モバイル共通）
+const NAV_LINKS = [
+  { href: "/", label: "ギャラリー", authRequired: false },
+  { href: "/profile", label: "アルバム", authRequired: true },
+  { href: "/upload", label: "アップロード", authRequired: true },
+  { href: "/admin", label: "設定", authRequired: true },
+] as const;
 
 export default function Nav() {
   const pathname = usePathname();
@@ -14,7 +22,9 @@ export default function Nav() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
-    // getSession()はローカルキャッシュを返す（getUser()はサーバーリクエスト）
+    // Supabase未設定時はデモモードのため認証処理をスキップ
+    if (!isConfigured) return;
+
     async function init() {
       const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user ?? null);
@@ -73,21 +83,12 @@ export default function Nav() {
 
       {/* デスクトップメニュー */}
       <div className="hidden sm:flex items-center gap-6">
-        <Link href="/" className={linkClass("/")}>
-          ギャラリー
-        </Link>
-        {user && (
-          <>
-            <Link href="/profile" className={linkClass("/profile")}>
-              アルバム
+        {NAV_LINKS.map((link) =>
+          link.authRequired && !user ? null : (
+            <Link key={link.href} href={link.href} className={linkClass(link.href)}>
+              {link.label}
             </Link>
-            <Link href="/upload" className={linkClass("/upload")}>
-              アップロード
-            </Link>
-            <Link href="/admin" className={linkClass("/admin")}>
-              設定
-            </Link>
-          </>
+          )
         )}
         {user ? (
           <button
@@ -110,21 +111,12 @@ export default function Nav() {
       {menuOpen && (
         <div className="absolute top-full left-0 right-0 bg-white/95 backdrop-blur-md border-b border-pink-100 shadow-lg sm:hidden z-50">
           <div className="flex flex-col px-6 py-4 gap-3">
-            <Link href="/" className={linkClass("/")} onClick={() => setMenuOpen(false)}>
-              ギャラリー
-            </Link>
-            {user && (
-              <>
-                <Link href="/profile" className={linkClass("/profile")} onClick={() => setMenuOpen(false)}>
-                  アルバム
+            {NAV_LINKS.map((link) =>
+              link.authRequired && !user ? null : (
+                <Link key={link.href} href={link.href} className={linkClass(link.href)} onClick={() => setMenuOpen(false)}>
+                  {link.label}
                 </Link>
-                <Link href="/upload" className={linkClass("/upload")} onClick={() => setMenuOpen(false)}>
-                  アップロード
-                </Link>
-                <Link href="/admin" className={linkClass("/admin")} onClick={() => setMenuOpen(false)}>
-                  設定
-                </Link>
-              </>
+              )
             )}
             {user ? (
               <button
