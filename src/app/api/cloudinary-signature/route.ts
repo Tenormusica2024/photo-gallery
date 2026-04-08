@@ -31,15 +31,6 @@ export async function POST(request: Request) {
     );
   }
 
-  try {
-    await request.json();
-  } catch {
-    return NextResponse.json(
-      { error: "リクエストボディが不正です" },
-      { status: 400 }
-    );
-  }
-
   const timestamp = Math.round(Date.now() / 1000);
   const folder = "pastelalbum";
 

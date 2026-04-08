@@ -14,6 +14,9 @@ function formatBytes(bytes: number): string {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
 }
 
+// Cloudinary Free tier上限（25GB）
+const CLOUDINARY_STORAGE_LIMIT = 25 * 1024 * 1024 * 1024;
+
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
   const mins = Math.floor(diff / 60000);
@@ -253,7 +256,7 @@ export default function AdminPage() {
                 </div>
                 <div>
                   <span className="text-gray-400">プラン</span>
-                  <p className="font-semibold text-gray-700">Free (25GB)</p>
+                  <p className="font-semibold text-gray-700">Free ({formatBytes(CLOUDINARY_STORAGE_LIMIT)})</p>
                 </div>
                 <div>
                   <span className="text-gray-400">使用済み</span>
@@ -262,7 +265,7 @@ export default function AdminPage() {
                 <div>
                   <span className="text-gray-400">残り容量</span>
                   <p className="font-semibold text-green-600">
-                    {formatBytes(Math.max(0, 25 * 1024 * 1024 * 1024 - totalSize))}
+                    {formatBytes(Math.max(0, CLOUDINARY_STORAGE_LIMIT - totalSize))}
                   </p>
                 </div>
               </div>
@@ -271,11 +274,11 @@ export default function AdminPage() {
                 <div className="w-full bg-gray-100 rounded-full h-2.5">
                   <div
                     className="bg-gradient-to-r from-pink-400 to-purple-400 h-2.5 rounded-full transition-all"
-                    style={{ width: `${Math.max((totalSize / (25 * 1024 * 1024 * 1024)) * 100, 0.5)}%` }}
+                    style={{ width: `${Math.max((totalSize / (CLOUDINARY_STORAGE_LIMIT)) * 100, 0.5)}%` }}
                   />
                 </div>
                 <p className="text-xs text-gray-400 mt-1 text-right">
-                  {((totalSize / (25 * 1024 * 1024 * 1024)) * 100).toFixed(2)}% 使用中
+                  {((totalSize / (CLOUDINARY_STORAGE_LIMIT)) * 100).toFixed(2)}% 使用中
                 </p>
               </div>
             </div>
