@@ -28,10 +28,6 @@ function timeAgo(dateStr: string): string {
   return `${days}日前`;
 }
 
-// エラーログをメモリに保持（セッション内のみ、コンポーネント内useEffectで初期化）
-const errorLogs: { time: string; message: string }[] = [];
-let errorPatchInstalled = false;
-
 export default function AdminPage() {
   const router = useRouter();
   const [userId, setUserId] = useState<string | null>(null);
@@ -52,6 +48,8 @@ export default function AdminPage() {
   const [errors, setErrors] = useState<{ time: string; message: string }[]>([]);
   const [activeTab, setActiveTab] = useState<"overview" | "family" | "errors">("overview");
   const setErrorsRef = useRef(setErrors);
+  const errorLogsRef = useRef<{ time: string; message: string }[]>([]);
+  const errorPatchInstalledRef = useRef(false);
 
   setErrorsRef.current = setErrors;
 
@@ -131,7 +129,7 @@ export default function AdminPage() {
   // エラーログ: console.errorパッチをコンポーネント内で管理（グローバル汚染を防止）
   useEffect(() => {
     const origError = console.error;
-    if (!errorPatchInstalled) {
+    if (!errorPatchInstalledRef.current) {
       // 機密情報をマスクしてからログに保存
       const maskSensitive = (text: string): string =>
         text
@@ -144,22 +142,22 @@ export default function AdminPage() {
           if (typeof a !== "object" || a === null) return String(a);
           try { return JSON.stringify(a); } catch { return String(a); }
         }).join(" ");
-        errorLogs.push({
+        errorLogsRef.current.push({
           time: new Date().toLocaleTimeString("ja-JP"),
           message: maskSensitive(raw),
         });
-        if (errorLogs.length > 50) errorLogs.shift();
-        setErrorsRef.current([...errorLogs].reverse());
+        if (errorLogsRef.current.length > 50) errorLogsRef.current.shift();
+        setErrorsRef.current([...errorLogsRef.current].reverse());
         origError.apply(console, args);
       };
-      errorPatchInstalled = true;
+      errorPatchInstalledRef.current = true;
     }
 
-    setErrors([...errorLogs].reverse());
+    setErrors([...errorLogsRef.current].reverse());
 
     return () => {
       console.error = origError;
-      errorPatchInstalled = false;
+      errorPatchInstalledRef.current = false;
     };
   }, []);
 
@@ -185,7 +183,11 @@ export default function AdminPage() {
 
   async function removeMember(memberId: string) {
     if (!isAdmin) return;
-    await supabase.from("family_members").delete().eq("id", memberId);
+    const { data: result, error } = await supabase.rpc("remove_family_member", { member_id: memberId });
+    if (error || result?.status === "error") {
+      console.error("メンバー削除失敗:", result?.code ?? error?.message);
+      return;
+    }
     setMembers((prev) => prev.filter((m) => m.id !== memberId));
   }
 
