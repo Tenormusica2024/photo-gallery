@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { supabase, isConfigured } from "@/lib/supabase";
 import type { Photo } from "@/types/database";
 import MasonryGrid from "@/components/MasonryGrid";
@@ -32,8 +33,9 @@ export default function GalleryPage() {
 
     async function loadPhotos() {
       try {
-        // authセッション復元を待ってからクエリ実行
-        await supabase.auth.getSession();
+        // セッションキャッシュからユーザー確認（サーバーリクエスト不要）
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return; // 未ログイン時はデモのまま
 
         const { data, error } = await supabase
           .from("photos")
@@ -103,13 +105,13 @@ export default function GalleryPage() {
       </div>
 
       {/* Upload FAB */}
-      <a
+      <Link
         href="/upload"
         className="fixed bottom-8 right-8 w-14 h-14 rounded-full bg-gradient-to-br from-pink-400 to-purple-400 text-white flex items-center justify-center text-3xl shadow-[0_4px_16px_rgba(216,27,96,0.3)] hover:scale-110 hover:shadow-[0_6px_24px_rgba(216,27,96,0.4)] transition-all"
         aria-label="写真をアップロード"
       >
         +
-      </a>
+      </Link>
     </>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import type { Photo } from "@/types/database";
 import Lightbox from "./Lightbox";
 
@@ -32,11 +33,13 @@ export default function MasonryGrid({ photos }: Props) {
                   preload="metadata"
                 />
               ) : (
-                <img
+                <Image
                   src={photo.url}
                   alt={photo.title || "Photo"}
-                  loading="lazy"
-                  className="w-full block group-hover:scale-[1.03] transition-transform duration-400"
+                  width={photo.width || 600}
+                  height={photo.height || 600}
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  className="w-full h-auto block group-hover:scale-[1.03] transition-transform duration-400"
                 />
               )}
               {/* 動画バッジ */}

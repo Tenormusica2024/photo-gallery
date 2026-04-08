@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import url("https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700&family=Quicksand:wght@400;500;600;700&display=swap");
 
 @theme inline {
   --color-background: #fafafa;
@@ -20,8 +19,8 @@
   --color-purple-300: #ba68c8;
   --color-purple-400: #ab47bc;
 
-  --font-sans: "Nunito", sans-serif;
-  --font-quicksand: "Quicksand", sans-serif;
+  --font-sans: var(--font-nunito), "Nunito", sans-serif;
+  --font-quicksand: var(--font-qs), "Quicksand", sans-serif;
 }
 
 body {

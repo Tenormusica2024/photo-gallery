@@ -27,8 +27,9 @@ export default function UploadPage() {
 
   useEffect(() => {
     async function init() {
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-      if (!authUser) { router.push("/login"); return; }
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) { router.push("/login"); return; }
+      const authUser = session.user;
       setUser(authUser.id);
       loadAlbums(authUser.id);
 

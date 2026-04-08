@@ -14,15 +14,15 @@ export default function Nav() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
+    // getSession()はローカルキャッシュを返す（getUser()はサーバーリクエスト）
     async function init() {
-      const { data } = await supabase.auth.getUser();
-      setUser(data.user);
-      if (data.user) {
-        // 管理者権限チェック
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user ?? null);
+      if (session?.user) {
         const { data: membership } = await supabase
           .from("family_members")
           .select("role")
-          .eq("user_id", data.user.id)
+          .eq("user_id", session.user.id)
           .limit(1)
           .single();
         if (membership?.role === "admin") setIsAdmin(true);

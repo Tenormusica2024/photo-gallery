@@ -24,19 +24,9 @@ function timeAgo(dateStr: string): string {
   return `${days}日前`;
 }
 
-// エラーログをメモリに保持（セッション内のみ）
+// エラーログをメモリに保持（セッション内のみ、コンポーネント内useEffectで初期化）
 const errorLogs: { time: string; message: string }[] = [];
-if (typeof window !== "undefined") {
-  const origError = console.error;
-  console.error = (...args: unknown[]) => {
-    errorLogs.push({
-      time: new Date().toLocaleTimeString("ja-JP"),
-      message: args.map((a) => (typeof a === "object" ? JSON.stringify(a) : String(a))).join(" "),
-    });
-    if (errorLogs.length > 50) errorLogs.shift();
-    origError.apply(console, args);
-  };
-}
+let errorPatchInstalled = false;
 
 export default function AdminPage() {
   const router = useRouter();
@@ -51,7 +41,6 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
 
   // 全体統計
-  const [allPhotos, setAllPhotos] = useState<Photo[]>([]);
   const [photoCount, setPhotoCount] = useState(0);
   const [videoCount, setVideoCount] = useState(0);
   const [totalSize, setTotalSize] = useState(0);
@@ -61,22 +50,31 @@ export default function AdminPage() {
 
   useEffect(() => {
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.push("/login?redirect=/admin"); return; }
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) { router.push("/login?redirect=/admin"); return; }
+      const user = session.user;
       setUserId(user.id);
 
-      // 全写真データを取得（統計用）
-      const { data: photos } = await supabase
-        .from("photos")
-        .select("*")
-        .order("created_at", { ascending: false });
+      // 統計用: カウントとサイズ集計（SELECT * 不要）
+      const [countResult, recentResult] = await Promise.all([
+        supabase
+          .from("photos")
+          .select("media_type, file_size"),
+        supabase
+          .from("photos")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .limit(10),
+      ]);
 
-      if (photos) {
-        setAllPhotos(photos);
-        setPhotoCount(photos.filter((p: Photo) => p.media_type === "image").length);
-        setVideoCount(photos.filter((p: Photo) => p.media_type === "video").length);
-        setTotalSize(photos.reduce((sum: number, p: Photo) => sum + (p.file_size || 0), 0));
-        setRecentUploads(photos.slice(0, 10));
+      if (countResult.data) {
+        const photos = countResult.data;
+        setPhotoCount(photos.filter((p) => p.media_type === "image").length);
+        setVideoCount(photos.filter((p) => p.media_type === "video").length);
+        setTotalSize(photos.reduce((sum, p) => sum + (p.file_size || 0), 0));
+      }
+      if (recentResult.data) {
+        setRecentUploads(recentResult.data);
       }
 
       // ファミリーメンバーシップ確認
@@ -119,8 +117,21 @@ export default function AdminPage() {
     load();
   }, [router]);
 
-  // エラーログを定期的に更新
+  // エラーログ: console.errorパッチをコンポーネント内で管理（グローバル汚染を防止）
   useEffect(() => {
+    if (!errorPatchInstalled) {
+      const origError = console.error;
+      console.error = (...args: unknown[]) => {
+        errorLogs.push({
+          time: new Date().toLocaleTimeString("ja-JP"),
+          message: args.map((a) => (typeof a === "object" ? JSON.stringify(a) : String(a))).join(" "),
+        });
+        if (errorLogs.length > 50) errorLogs.shift();
+        origError.apply(console, args);
+      };
+      errorPatchInstalled = true;
+    }
+
     const interval = setInterval(() => {
       setErrors([...errorLogs].reverse());
     }, 3000);
