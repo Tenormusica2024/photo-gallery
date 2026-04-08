@@ -54,7 +54,7 @@ export default function AlbumPage() {
   if (loading) {
     return (
       <div className="min-h-[calc(100vh-56px)] flex items-center justify-center">
-        <p className="text-gray-400">Loading...</p>
+        <p className="text-gray-400">読み込み中...</p>
       </div>
     );
   }
@@ -67,15 +67,15 @@ export default function AlbumPage() {
           href="/profile"
           className="text-sm text-pink-400 hover:text-pink-600 transition-colors"
         >
-          &larr; Back to Albums
+          &larr; アルバムに戻る
         </Link>
         <h1 className="font-quicksand text-2xl font-bold text-pink-600 mt-2">
-          {album?.title || "Album"}
+          {album?.title || "アルバム"}
         </h1>
         {album?.description && (
           <p className="text-gray-500 text-sm mt-1">{album.description}</p>
         )}
-        <p className="text-gray-400 text-xs mt-2">{photos.length} photos</p>
+        <p className="text-gray-400 text-xs mt-2">{photos.length} 枚</p>
       </div>
 
       {/* Photos */}
@@ -83,13 +83,13 @@ export default function AlbumPage() {
         {photos.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-400 text-sm mb-4">
-              No photos in this album yet.
+              このアルバムにはまだ写真がありません
             </p>
             <Link
               href="/upload"
               className="inline-block px-6 py-2 bg-gradient-to-r from-pink-400 to-purple-400 text-white rounded-2xl text-sm font-bold hover:opacity-90 transition-opacity"
             >
-              Upload Photos
+              写真をアップロード
             </Link>
           </div>
         ) : (

@@ -18,8 +18,8 @@ const quicksand = Quicksand({
 });
 
 export const metadata: Metadata = {
-  title: "Pastel Album - Family Photo Gallery",
-  description: "A beautiful pastel-themed gallery for family photos and precious moments",
+  title: "pastelalbum - 家族のフォトギャラリー",
+  description: "家族の写真と大切な思い出を、パステルカラーのギャラリーで",
 };
 
 export default function RootLayout({

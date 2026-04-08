@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import type { Photo, FamilyGroup, FamilyMember, StorageUsage } from "@/types/database";
 
@@ -299,9 +300,11 @@ export default function AdminPage() {
                             VID
                           </div>
                         ) : (
-                          <img
+                          <Image
                             src={photo.url}
                             alt={photo.title || ""}
+                            width={40}
+                            height={40}
                             className="w-full h-full object-cover"
                           />
                         )}

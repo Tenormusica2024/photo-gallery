@@ -109,6 +109,12 @@ export default function UploadPage() {
       return;
     }
 
+    // アルバム所有権の検証（選択されている場合）
+    if (selectedAlbum && !albums.some((a) => a.id === selectedAlbum)) {
+      setError("選択されたアルバムが見つかりません。ページを再読み込みしてください。");
+      return;
+    }
+
     setUploading(true);
     setError("");
     setProgress(0);

@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import type { Profile, Album } from "@/types/database";
 
@@ -90,6 +91,13 @@ export default function ProfilePage() {
     const file = e.target.files?.[0];
     if (!file || !profile) return;
 
+    // ファイル形式チェック（画像のみ許可）
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    if (!allowedTypes.includes(file.type)) {
+      alert("対応している画像形式: JPG, PNG, WebP, GIF");
+      return;
+    }
+
     // 5MB制限
     if (file.size > 5 * 1024 * 1024) {
       alert("5MB以下の画像を選択してください");
@@ -167,9 +175,11 @@ export default function ProfilePage() {
             className="w-24 h-24 rounded-full bg-gradient-to-br from-pink-200 to-purple-200 mx-auto flex items-center justify-center text-3xl text-white font-bold overflow-hidden cursor-pointer group"
           >
             {profile?.avatar_url ? (
-              <img
+              <Image
                 src={profile.avatar_url}
                 alt={profile.display_name || ""}
+                width={96}
+                height={96}
                 className="w-full h-full object-cover"
               />
             ) : (

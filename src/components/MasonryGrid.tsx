@@ -35,7 +35,7 @@ export default function MasonryGrid({ photos }: Props) {
               ) : (
                 <Image
                   src={photo.url}
-                  alt={photo.title || "Photo"}
+                  alt={photo.title || "写真"}
                   width={photo.width || 600}
                   height={photo.height || 600}
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
