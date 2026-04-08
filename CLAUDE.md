@@ -4,7 +4,8 @@
 
 - **未ログイン時**: デモ画像を表示（ログインリダイレクト不要。ランディングページ的役割）
 - **ストレージ**: Cloudinary一本（Supabase Storageバケットは不使用・マイグレーションから削除）
-- **RLSポリシー**: family_members自己参照はSECURITY DEFINER関数で回避（003_fix_rls_recursion.sql）
+- **RLSポリシー**: family_members自己参照はSECURITY DEFINER関数で回避（003_fix_rls_recursion.sql）。family_members INSERTは直接禁止（with check false）し、join_family_by_invite / create_family_with_admin RPCのみ許可（005_rls_security_hardening.sql）
+- **RLSセキュリティ方針**: profiles/family_groups/photosは全て最小権限。匿名アクセス不可。family_id/album_idの所属検証をRLSレベルで強制
 - **アップロード**: Cloudinary署名付きアップロード（API Secretはサーバーサイドのみ。`/api/cloudinary-signature`で署名生成）
 - **認証**: @supabase/ssr + proxy.ts（Next.js 16）でサーバーサイドセッションリフレッシュ
 
@@ -21,3 +22,5 @@
 - 認証チェックではgetUser()（サーバーリクエスト）ではなくgetSession()（ローカルキャッシュ）を使う。getUser()はページ遷移ごとに100-300msのRTTが発生する
 - next/font/googleのCSS変数名と@theme内の変数名が衝突すると循環参照になる。変数名を分ける
 - proxy.tsでgetUser()を使うとページ遷移ごとにサーバーリクエストが発生するが、セッションリフレッシュ目的では必要（クライアント側のgetSession()と使い分ける）
+- RLSで直接INSERTを禁止（with check false）した場合、adminの初期メンバー追加も含めて全てSECURITY DEFINER RPCに移行する必要がある
+- INSERT ON CONFLICTを使ってrace conditionを防止する。read-then-insertパターンは並行リクエストで破綻する
