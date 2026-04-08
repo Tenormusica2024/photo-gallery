@@ -194,7 +194,7 @@ export default function AdminPage() {
     <div className="min-h-[calc(100vh-56px)] bg-gradient-to-b from-pink-50 to-white px-4 py-8">
       <div className="max-w-4xl mx-auto space-y-6">
         <h1 className="font-quicksand text-2xl font-bold text-pink-600 text-center">
-          管理ダッシュボード
+          設定
         </h1>
 
         {/* Tab navigation */}

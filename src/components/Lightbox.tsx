@@ -112,9 +112,12 @@ export default function Lightbox({ photos, currentIndex, onClose, onNavigate }: 
       )}
 
       {/* 情報 */}
-      <div className="text-white text-center mt-4">
+      <div className="text-white text-center mt-4 max-w-lg">
         <p className="font-bold">{photo.title || "無題"}</p>
-        <p className="text-sm text-white/75">
+        {photo.description && (
+          <p className="text-sm text-white/85 mt-1">{photo.description}</p>
+        )}
+        <p className="text-sm text-white/60 mt-1">
           {new Date(photo.created_at).toLocaleDateString("ja-JP")}
           {" "}
           ({currentIndex + 1} / {photos.length})

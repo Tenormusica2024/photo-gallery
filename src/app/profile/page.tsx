@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
@@ -14,6 +14,13 @@ export default function ProfilePage() {
   const [showNewAlbum, setShowNewAlbum] = useState(false);
   const [newAlbumTitle, setNewAlbumTitle] = useState("");
   const [loading, setLoading] = useState(true);
+
+  // プロフィール編集
+  const [editing, setEditing] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     async function load() {
@@ -59,6 +66,67 @@ export default function ProfilePage() {
     load();
   }, [router]);
 
+  // プロフィール保存
+  async function saveProfile() {
+    if (!profile || !editName.trim()) return;
+    setSaving(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ display_name: editName.trim() })
+      .eq("id", profile.id);
+    if (!error) {
+      setProfile({ ...profile, display_name: editName.trim() });
+      setEditing(false);
+    }
+    setSaving(false);
+  }
+
+  // アバターアップロード（Cloudinary経��）
+  async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !profile) return;
+
+    // 5MB制限
+    if (file.size > 5 * 1024 * 1024) {
+      alert("5MB以下の画像を選択してください");
+      return;
+    }
+
+    setAvatarUploading(true);
+    try {
+      const cloudName = (process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "").trim();
+      const uploadPreset = (process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "").trim();
+
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", uploadPreset);
+      formData.append("folder", "pastelalbum/avatars");
+
+      const res = await fetch(
+        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+        { method: "POST", body: formData }
+      );
+      if (!res.ok) throw new Error("アバターのアップロードに失敗しました");
+
+      const data = await res.json();
+      const avatarUrl: string = data.secure_url;
+
+      // プロフィールに保存
+      const { error } = await supabase
+        .from("profiles")
+        .update({ avatar_url: avatarUrl })
+        .eq("id", profile.id);
+
+      if (!error) {
+        setProfile({ ...profile, avatar_url: avatarUrl });
+      }
+    } catch (err) {
+      console.error("Avatar upload error:", err);
+    } finally {
+      setAvatarUploading(false);
+    }
+  }
+
   async function createAlbum(e: React.FormEvent) {
     e.preventDefault();
     if (!profile || !newAlbumTitle.trim()) return;
@@ -88,12 +156,84 @@ export default function ProfilePage() {
     <div className="min-h-[calc(100vh-56px)] bg-[var(--color-background)] px-4 py-8">
       {/* Profile header */}
       <div className="text-center mb-8">
-        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-pink-200 to-purple-200 mx-auto mb-4 flex items-center justify-center text-3xl text-white font-bold">
-          {profile?.display_name?.charAt(0)?.toUpperCase() || "?"}
+        {/* アバター（クリックで変更） */}
+        <div className="relative inline-block mb-4">
+          <div
+            onClick={() => avatarInputRef.current?.click()}
+            className="w-24 h-24 rounded-full bg-gradient-to-br from-pink-200 to-purple-200 mx-auto flex items-center justify-center text-3xl text-white font-bold overflow-hidden cursor-pointer group"
+          >
+            {profile?.avatar_url ? (
+              <img
+                src={profile.avatar_url}
+                alt={profile.display_name || ""}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              profile?.display_name?.charAt(0)?.toUpperCase() || "?"
+            )}
+            {/* ホバーオーバーレイ */}
+            <div className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              <span className="text-white text-xs font-semibold">
+                {avatarUploading ? "..." : "変更"}
+              </span>
+            </div>
+          </div>
+          <input
+            ref={avatarInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleAvatarUpload}
+            className="hidden"
+          />
         </div>
-        <h2 className="font-quicksand text-2xl font-bold text-pink-600">
-          {profile?.display_name || "User"}
-        </h2>
+
+        {/* 名前（編集モード切替） */}
+        {editing ? (
+          <div className="flex items-center justify-center gap-2 mb-1">
+            <input
+              type="text"
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              className="px-3 py-1.5 border-[1.5px] border-pink-200 rounded-xl text-lg font-bold text-pink-600 text-center outline-none focus:border-pink-400 font-quicksand w-48"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === "Enter") saveProfile();
+                if (e.key === "Escape") setEditing(false);
+              }}
+            />
+            <button
+              onClick={saveProfile}
+              disabled={saving}
+              className="text-sm text-pink-500 hover:text-pink-600 font-semibold"
+            >
+              {saving ? "..." : "保存"}
+            </button>
+            <button
+              onClick={() => setEditing(false)}
+              className="text-sm text-gray-400 hover:text-gray-500"
+            >
+              取消
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center justify-center gap-2 mb-1">
+            <h2 className="font-quicksand text-2xl font-bold text-pink-600">
+              {profile?.display_name || "User"}
+            </h2>
+            <button
+              onClick={() => {
+                setEditName(profile?.display_name || "");
+                setEditing(true);
+              }}
+              className="text-gray-300 hover:text-pink-400 transition-colors"
+              aria-label="名前を編集"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+              </svg>
+            </button>
+          </div>
+        )}
         <p className="text-gray-500 text-sm">{profile?.email}</p>
 
         {/* Stats */}

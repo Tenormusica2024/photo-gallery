@@ -19,6 +19,7 @@ export default function UploadPage() {
   const [selectedAlbum, setSelectedAlbum] = useState<string>("");
   const [visibility, setVisibility] = useState<"everyone" | "admin_only">("everyone");
   const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -140,6 +141,7 @@ export default function UploadPage() {
           album_id: selectedAlbum || null,
           family_id: familyId,
           title: title || file.name.replace(/\.[^/.]+$/, ""),
+          description: description || null,
           storage_path: publicId,
           url: secureUrl,
           width: width ?? null,
@@ -260,6 +262,22 @@ export default function UploadPage() {
               placeholder="写真・動画のタイトル"
               className="w-full px-4 py-3 border-[1.5px] border-pink-100 rounded-2xl text-sm outline-none focus:border-pink-400 transition-colors"
             />
+          </div>
+
+          {/* 一言メモ */}
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 mb-1">
+              一言メモ（任意）
+            </label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="この写真についてひとこと"
+              rows={2}
+              maxLength={200}
+              className="w-full px-4 py-3 border-[1.5px] border-pink-100 rounded-2xl text-sm outline-none focus:border-pink-400 transition-colors resize-none"
+            />
+            <p className="text-xs text-gray-300 text-right mt-0.5">{description.length}/200</p>
           </div>
 
           {/* アルバム選択 */}

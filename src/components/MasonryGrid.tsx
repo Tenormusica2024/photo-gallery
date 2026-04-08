@@ -55,7 +55,12 @@ export default function MasonryGrid({ photos }: Props) {
                 <p className="text-white font-bold text-sm">
                   {photo.title || "無題"}
                 </p>
-                <p className="text-white/85 text-xs">
+                {photo.description && (
+                  <p className="text-white/90 text-xs mt-0.5 line-clamp-2">
+                    {photo.description}
+                  </p>
+                )}
+                <p className="text-white/70 text-xs mt-0.5">
                   {new Date(photo.created_at).toLocaleDateString("ja-JP")}
                 </p>
               </div>

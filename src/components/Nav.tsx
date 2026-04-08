@@ -85,7 +85,7 @@ export default function Nav() {
               アップロード
             </Link>
             <Link href="/admin" className={linkClass("/admin")}>
-              {isAdmin ? "管理" : "ファミリー"}
+              設定
             </Link>
           </>
         )}
@@ -122,7 +122,7 @@ export default function Nav() {
                   アップロード
                 </Link>
                 <Link href="/admin" className={linkClass("/admin")} onClick={() => setMenuOpen(false)}>
-                  {isAdmin ? "管理" : "ファミリー"}
+                  設定
                 </Link>
               </>
             )}

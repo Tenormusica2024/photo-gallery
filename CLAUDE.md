@@ -10,6 +10,7 @@
 
 - @supabase/ssr移行（現在の@supabase/supabase-jsからの移行。ユーザー0の今が最適タイミング）
 - Supabase SDKバンドルサイズ最適化（tree-shaking改善の余地あり。計測が必要）
+- オーナー専用ツール管理画面（/admin/system等。全ユーザーの統計・Cloudinary API使用量・エラーログ集約）
 
 ## 学んだ教訓
 
