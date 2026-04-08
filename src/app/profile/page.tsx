@@ -29,7 +29,7 @@ export default function ProfilePage() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.user) {
-          router.push("/login");
+          router.push("/login?redirect=/profile");
           return;
         }
         const user = session.user;

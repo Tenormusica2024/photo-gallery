@@ -44,9 +44,12 @@ export default function Nav() {
     router.push("/login");
   }
 
+  const isActive = (href: string) =>
+    href === "/" ? pathname === "/" : pathname.startsWith(href);
+
   const linkClass = (href: string) =>
     `text-sm font-semibold transition-colors ${
-      pathname === href
+      isActive(href)
         ? "text-pink-600"
         : "text-gray-500 hover:text-pink-600"
     }`;

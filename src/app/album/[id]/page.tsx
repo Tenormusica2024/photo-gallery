@@ -19,7 +19,7 @@ export default function AlbumPage() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.user) {
-          router.push("/login");
+          router.push(`/login?redirect=${encodeURIComponent(`/album/${params.id as string}`)}`);
           return;
         }
 
@@ -61,6 +61,12 @@ export default function AlbumPage() {
 
   return (
     <div className="min-h-[calc(100vh-56px)] bg-[var(--color-background)]">
+      {!album ? (
+        <div className="max-w-5xl mx-auto px-4 py-16 text-center">
+          <p className="text-gray-500 text-sm">アルバムが見つかりません</p>
+        </div>
+      ) : (
+        <>
       {/* Album header */}
       <div className="bg-gradient-to-b from-pink-50 to-white py-8 px-4 text-center">
         <Link
@@ -96,6 +102,8 @@ export default function AlbumPage() {
           <MasonryGrid photos={photos} />
         )}
       </div>
+        </>
+      )}
     </div>
   );
 }

@@ -17,6 +17,7 @@ function InviteContent() {
   const [family, setFamily] = useState<InviteFamily | null>(null);
   const [status, setStatus] = useState<"loading" | "found" | "not_found" | "joined" | "already_member" | "error">("loading");
   const [error, setError] = useState("");
+  const [joining, setJoining] = useState(false);
 
   useEffect(() => {
     if (!code) {
@@ -40,36 +41,46 @@ function InviteContent() {
     checkInvite();
   }, [code]);
 
+  // RPCエラーコードをユーザー向けメッセージに変換
+  const errorMessages: Record<string, string> = {
+    auth_required: "ログインが必要です",
+    invalid_invite: "招待コードが無効です",
+  };
+
   async function joinFamily() {
-    if (!family) return;
+    if (!family || joining) return;
+    setJoining(true);
 
-    // getSession()を使用（getUser()はサーバーリクエストが発生するため）
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user;
-    if (!user) {
-      // Redirect to login with return URL
-      router.push(`/login?redirect=/invite?code=${code}`);
-      return;
+    try {
+      // getSession()を使用（getUser()はサーバーリクエストが発生するため）
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
+      if (!user) {
+        router.push(`/login?redirect=${encodeURIComponent(`/invite?code=${code}`)}`);
+        return;
+      }
+
+      // RPC経由でファミリーに参加（直接INSERTはRLSで禁止済み）
+      const { data: result, error: joinError } = await supabase
+        .rpc("join_family_by_invite", { invite_code: code });
+
+      if (joinError) {
+        setError("参加処理に失敗しました");
+        setStatus("error");
+        return;
+      }
+
+      // 統一された返り値形式: {status: "error", code: "..."} | {status: "joined"|"already_member", ...}
+      if (result?.status === "error") {
+        setError(errorMessages[result.code] ?? "エラーが発生しました");
+        setStatus("error");
+        return;
+      }
+
+      setStatus(result?.status === "already_member" ? "already_member" : "joined");
+    } finally {
+      setJoining(false);
     }
-
-    // RPC経由でファミリーに参加（直接INSERTはRLSで禁止済み）
-    const { data: result, error: joinError } = await supabase
-      .rpc("join_family_by_invite", { invite_code: code });
-
-    if (joinError) {
-      setError(joinError.message);
-      setStatus("error");
-      return;
-    }
-
-    // 統一された返り値形式: {status: "error", code: "..."} | {status: "joined"|"already_member", ...}
-    if (result?.status === "error") {
-      setError(result.code);
-      setStatus("error");
-      return;
-    }
-
-    setStatus(result?.status === "already_member" ? "already_member" : "joined");
   }
 
   return (
@@ -100,9 +111,10 @@ function InviteContent() {
             </p>
             <button
               onClick={joinFamily}
-              className="w-full py-3 bg-gradient-to-r from-pink-400 to-purple-400 text-white rounded-2xl font-bold text-sm hover:opacity-90 transition-opacity"
+              disabled={joining}
+              className="w-full py-3 bg-gradient-to-r from-pink-400 to-purple-400 text-white rounded-2xl font-bold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
             >
-              ファミリーに参加
+              {joining ? "参加中..." : "ファミリーに参加"}
             </button>
           </>
         )}

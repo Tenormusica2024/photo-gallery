@@ -1,13 +1,19 @@
 import type { NextConfig } from "next";
 
+const cloudinaryRemotePatterns = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+  ? [
+      {
+        protocol: "https" as const,
+        hostname: "res.cloudinary.com",
+        pathname: `/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/**`,
+      },
+    ]
+  : [];
+
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "res.cloudinary.com",
-        pathname: `/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "dhgmxn2rp"}/**`,
-      },
+      ...cloudinaryRemotePatterns,
       {
         protocol: "https",
         hostname: "images.unsplash.com",

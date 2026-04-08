@@ -15,6 +15,7 @@ export async function POST(request: Request) {
 
   const apiSecret = process.env.CLOUDINARY_API_SECRET;
   const apiKey = process.env.CLOUDINARY_API_KEY;
+  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
 
   if (!apiSecret || !apiKey) {
     return NextResponse.json(
@@ -23,18 +24,28 @@ export async function POST(request: Request) {
     );
   }
 
-  const body = await request.json();
-  const { folder, upload_preset } = body as {
-    folder?: string;
-    upload_preset?: string;
-  };
+  if (!cloudName) {
+    return NextResponse.json(
+      { error: "Cloudinaryのクラウド名が設定されていません" },
+      { status: 500 }
+    );
+  }
+
+  try {
+    await request.json();
+  } catch {
+    return NextResponse.json(
+      { error: "リクエストボディが不正です" },
+      { status: 400 }
+    );
+  }
 
   const timestamp = Math.round(Date.now() / 1000);
+  const folder = "pastelalbum";
 
   // 署名対象パラメータ（アルファベット順で連結）
   const params: Record<string, string> = { timestamp: String(timestamp) };
   if (folder) params.folder = folder;
-  if (upload_preset) params.upload_preset = upload_preset;
 
   // パラメータをキー名でソートして&で連結
   const sortedParams = Object.keys(params)
@@ -52,6 +63,6 @@ export async function POST(request: Request) {
     signature,
     timestamp,
     api_key: apiKey,
-    cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+    cloud_name: cloudName,
   });
 }

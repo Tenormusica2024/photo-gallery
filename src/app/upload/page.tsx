@@ -32,10 +32,10 @@ export default function UploadPage() {
     async function init() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.user) { router.push("/login"); return; }
+        if (!session?.user) { router.push("/login?redirect=/upload"); return; }
         const authUser = session.user;
         setUser(authUser.id);
-        loadAlbums(authUser.id);
+        await loadAlbums(authUser.id);
 
         // ユーザーの所属ファミリーを取得
         const { data: membership } = await supabase
@@ -53,6 +53,14 @@ export default function UploadPage() {
     }
     init();
   }, [router]);
+
+  useEffect(() => {
+    return () => {
+      previews.forEach((url) => {
+        if (url.startsWith("blob:")) URL.revokeObjectURL(url);
+      });
+    };
+  }, [previews]);
 
   async function loadAlbums(userId: string) {
     const { data } = await supabase
@@ -141,6 +149,9 @@ export default function UploadPage() {
         setProgress(Math.round(((i + 1) / files.length) * 100));
       }
 
+      previews.forEach((url) => {
+        if (url.startsWith("blob:")) URL.revokeObjectURL(url);
+      });
       router.push("/");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "アップロードに失敗しました");
@@ -192,7 +203,7 @@ export default function UploadPage() {
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/*,video/*"
+              accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime"
               multiple
               onChange={handleFileSelect}
               className="hidden"

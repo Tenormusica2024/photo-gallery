@@ -27,15 +27,24 @@ export default function GalleryPage() {
   const [photos, setPhotos] = useState<Photo[]>(DEMO_PHOTOS);
   const [activeCategory, setActiveCategory] = useState("すべて");
   const [isDemo, setIsDemo] = useState(true);
+  const [demoReason, setDemoReason] = useState<"not_configured" | "not_logged_in" | "empty">("not_configured");
 
   useEffect(() => {
-    if (!isConfigured) return;
+    if (!isConfigured) {
+      setIsDemo(true);
+      setDemoReason("not_configured");
+      return;
+    }
 
     async function loadPhotos() {
       try {
         // セッションキャッシュからユーザー確認（サーバーリクエスト不要）
         const { data: { session } } = await supabase.auth.getSession();
-        if (!session) return; // 未ログイン時はデモのまま
+        if (!session) {
+          setIsDemo(true);
+          setDemoReason("not_logged_in");
+          return;
+        }
 
         const { data, error } = await supabase
           .from("photos")
@@ -45,7 +54,10 @@ export default function GalleryPage() {
         if (!error && data && data.length > 0) {
           setPhotos(data);
           setIsDemo(false);
+          return;
         }
+        setIsDemo(true);
+        setDemoReason("empty");
       } catch (err) {
         console.error("Gallery load error:", err);
       }
@@ -86,7 +98,9 @@ export default function GalleryPage() {
       {isDemo && (
         <div className="max-w-5xl mx-auto px-4 mt-4">
           <div className="bg-lavender-50 border border-lavender-100 rounded-2xl px-4 py-3 text-sm text-purple-400 text-center">
-            デモモード - Supabase未設定のため、サンプル写真を表示しています。
+            {demoReason === "not_configured" && "デモモード - Supabase未設定のため、サンプル写真を表示しています。"}
+            {demoReason === "not_logged_in" && "ログインすると、家族の写真を見ることができます。"}
+            {demoReason === "empty" && "まだ写真がありません。アップロードしてみましょう。"}
           </div>
         </div>
       )}

@@ -34,6 +34,13 @@ returns table(id uuid, name text) as $$
   limit 1;
 $$ language sql security definer stable;
 
+-- 直接INSERTを禁止（create_family_with_admin RPCのみが挿入可能）
+-- RPCなしでのファミリー作成を防止し、admin不在の孤立ファミリーを防ぐ
+drop policy if exists "Authenticated users can create family groups" on public.family_groups;
+create policy "No direct insert to family_groups" on public.family_groups
+  for insert to authenticated
+  with check (false);
+
 -- ============================================================
 -- 2. family_members INSERT: RPC経由のみ許可
 -- ============================================================
@@ -83,14 +90,14 @@ begin
     return jsonb_build_object(
       'status', 'already_member',
       'family_id', v_family_id,
-      'family_name', v_family_name
+      'name', v_family_name
     );
   end if;
 
   return jsonb_build_object(
     'status', 'joined',
     'family_id', v_family_id,
-    'family_name', v_family_name
+    'name', v_family_name
   );
 end;
 $$ language plpgsql security definer;
@@ -111,6 +118,11 @@ begin
 
   if trim(family_name) = '' then
     return jsonb_build_object('status', 'error', 'code', 'name_required');
+  end if;
+
+  -- 1ユーザーがadminとして所有できるファミリー数を制限（リソース枯渇防止）
+  if (select count(*) from public.family_members where user_id = v_user_id and role = 'admin') >= 5 then
+    return jsonb_build_object('status', 'error', 'code', 'max_families_reached');
   end if;
 
   -- ファミリーグループを作成

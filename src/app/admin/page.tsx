@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
@@ -48,6 +48,9 @@ export default function AdminPage() {
   const [recentUploads, setRecentUploads] = useState<Photo[]>([]);
   const [errors, setErrors] = useState<{ time: string; message: string }[]>([]);
   const [activeTab, setActiveTab] = useState<"overview" | "family" | "errors">("overview");
+  const setErrorsRef = useRef(setErrors);
+
+  setErrorsRef.current = setErrors;
 
   useEffect(() => {
     async function load() {
@@ -124,8 +127,8 @@ export default function AdminPage() {
 
   // エラーログ: console.errorパッチをコンポーネント内で管理（グローバル汚染を防止）
   useEffect(() => {
+    const origError = console.error;
     if (!errorPatchInstalled) {
-      const origError = console.error;
       // 機密情報をマスクしてからログに保存
       const maskSensitive = (text: string): string =>
         text
@@ -143,15 +146,18 @@ export default function AdminPage() {
           message: maskSensitive(raw),
         });
         if (errorLogs.length > 50) errorLogs.shift();
+        setErrorsRef.current([...errorLogs].reverse());
         origError.apply(console, args);
       };
       errorPatchInstalled = true;
     }
 
-    const interval = setInterval(() => {
-      setErrors([...errorLogs].reverse());
-    }, 3000);
-    return () => clearInterval(interval);
+    setErrors([...errorLogs].reverse());
+
+    return () => {
+      console.error = origError;
+      errorPatchInstalled = false;
+    };
   }, []);
 
   async function createFamily(e: React.FormEvent) {
