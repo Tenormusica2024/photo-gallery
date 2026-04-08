@@ -11,6 +11,7 @@
 - **マルチファミリー**: 1ユーザーが複数ファミリーに所属可能な設計（`get_my_family_ids()`は複数返す前提）。UIは現状1ファミリー表示だが、DB/RLS層は複数対応済み
 - **RPC返り値統一**: 全SECURITY DEFINER RPCは `{status: "error", code: "..."}` | `{status: "success_variant", ...}` 形式。フロント側は `.status === "error"` で判定
 - **招待コード照合の匿名アクセス**: `lookup_family_by_invite`は未認証でも呼べる（招待リンクを開いた未ログインユーザーにファミリー名を表示するUX要件）
+- **family_members操作の完全RPC化**: INSERT/DELETE共にSECURITY DEFINER RPCのみ許可。直接操作はRLSでwith check(false)/using(false)で禁止
 
 ## TODO（将来対応）
 
