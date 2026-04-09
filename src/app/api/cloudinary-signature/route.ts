@@ -32,7 +32,17 @@ export async function POST(request: Request) {
   }
 
   const timestamp = Math.round(Date.now() / 1000);
-  const folder = "pastelalbum";
+  const body = await request.json().catch(() => ({} as { folder?: unknown }));
+  const requestedFolder =
+    typeof body.folder === "string" ? body.folder.trim() : "";
+  const folder = requestedFolder || "pastelalbum";
+
+  if (!folder.startsWith("pastelalbum")) {
+    return NextResponse.json(
+      { error: "許可されていないアップロード先です" },
+      { status: 400 }
+    );
+  }
 
   // 署名対象パラメータ（アルファベット順で連結）
   const params: Record<string, string> = { timestamp: String(timestamp) };

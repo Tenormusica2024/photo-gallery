@@ -1,14 +1,33 @@
 "use client";
-
+import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
-import { uploadToCloudinary } from "@/lib/cloudinary";
+import ConfigRequired from "@/components/ConfigRequired";
+import { supabase, isConfigured } from "@/lib/supabase";
+import { deleteFromCloudinary, uploadToCloudinary } from "@/lib/cloudinary";
 import type { Album } from "@/types/database";
 
 // 画像・動画の判定
 function isVideoFile(file: File): boolean {
   return file.type.startsWith("video/");
+}
+
+function getUploadErrorMessage(err: unknown): string {
+  if (err instanceof Error) {
+    return err.message;
+  }
+
+  if (
+    typeof err === "object" &&
+    err !== null &&
+    "message" in err &&
+    typeof err.message === "string" &&
+    err.message.length > 0
+  ) {
+    return err.message;
+  }
+
+  return "アップロードに失敗しました";
 }
 
 export default function UploadPage() {
@@ -145,8 +164,14 @@ export default function UploadPage() {
         });
 
         if (insertError) {
-          // Cloudinaryにアップロード済みだがDB挿入失敗 → orphanアセットを検知可能にする
-          console.error(`Cloudinary orphan asset: publicId=${publicId}, error=${insertError.message}`);
+          // DB保存失敗時はCloudinary側を後始末し、失敗理由はそのままユーザーへ返す
+          try {
+            await deleteFromCloudinary(publicId, resourceType);
+          } catch (cleanupError) {
+            console.error(
+              `Cloudinary orphan asset: publicId=${publicId}, cleanupError=${getUploadErrorMessage(cleanupError)}`,
+            );
+          }
           throw insertError;
         }
 
@@ -158,7 +183,7 @@ export default function UploadPage() {
       });
       router.push("/");
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "アップロードに失敗しました");
+      setError(getUploadErrorMessage(err));
     } finally {
       setUploading(false);
     }
@@ -174,6 +199,15 @@ export default function UploadPage() {
     if (imageCount > 0) parts.push(`写真 ${imageCount}枚`);
     if (videoCount > 0) parts.push(`動画 ${videoCount}本`);
     return parts.length > 0 ? `${parts.join("と")}をアップロード` : "ファイルを選択してください";
+  }
+
+  if (!isConfigured) {
+    return (
+      <ConfigRequired
+        title="アップロードはまだ利用できません"
+        message="Supabase と Cloudinary の設定が未完了のため、写真や動画のアップロードは開始できません。"
+      />
+    );
   }
 
   if (loading) {
@@ -218,7 +252,7 @@ export default function UploadPage() {
           {previews.length > 0 && (
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
               {previews.map((src, i) => (
-                <div key={i} className="relative group rounded-xl overflow-hidden">
+                <div key={i} className="relative h-24 group rounded-xl overflow-hidden">
                   {files[i] && isVideoFile(files[i]) ? (
                     <video
                       src={src}
@@ -226,10 +260,13 @@ export default function UploadPage() {
                       muted
                     />
                   ) : (
-                    <img
+                    <Image
                       src={src}
                       alt=""
-                      className="w-full h-24 object-cover"
+                      fill
+                      unoptimized
+                      sizes="(max-width: 640px) 33vw, 25vw"
+                      className="object-cover"
                     />
                   )}
                   {/* 動画バッジ */}

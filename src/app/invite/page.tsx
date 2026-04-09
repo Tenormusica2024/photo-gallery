@@ -2,7 +2,9 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import ConfigRequired from "@/components/ConfigRequired";
+import { supabase, isConfigured } from "@/lib/supabase";
+import { getMissingRpcMessage, isMissingRpcError } from "@/lib/supabase-errors";
 // RPC経由で取得するファミリー情報（id, nameのみ）
 interface InviteFamily {
   id: string;
@@ -29,6 +31,12 @@ function InviteContent() {
       // RPC経由で招待コードを照合（family_groupsへの直接SELECTはRLSで制限済み）
       const { data, error: fetchError } = await supabase
         .rpc("lookup_family_by_invite", { invite: code });
+
+      if (isMissingRpcError(fetchError)) {
+        setError(getMissingRpcMessage("family_invite"));
+        setStatus("error");
+        return;
+      }
 
       if (fetchError || !data || data.length === 0) {
         setStatus("not_found");
@@ -64,6 +72,12 @@ function InviteContent() {
       const { data: result, error: joinError } = await supabase
         .rpc("join_family_by_invite", { invite_code: code });
 
+      if (isMissingRpcError(joinError)) {
+        setError(getMissingRpcMessage("family_invite"));
+        setStatus("error");
+        return;
+      }
+
       if (joinError) {
         setError("参加処理に失敗しました");
         setStatus("error");
@@ -81,6 +95,15 @@ function InviteContent() {
     } finally {
       setJoining(false);
     }
+  }
+
+  if (!isConfigured) {
+    return (
+      <ConfigRequired
+        title="招待リンクはまだ利用できません"
+        message="Supabase の環境変数が未設定のため、招待コードの照合と参加処理を開始できません。"
+      />
+    );
   }
 
   return (

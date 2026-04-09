@@ -3,7 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { supabase } from "@/lib/supabase";
+import ConfigRequired from "@/components/ConfigRequired";
+import { supabase, isConfigured } from "@/lib/supabase";
+import { getMissingRpcMessage, isMissingRpcError } from "@/lib/supabase-errors";
 import type { Photo, FamilyGroup, FamilyMember, StorageUsage } from "@/types/database";
 
 function formatBytes(bytes: number): string {
@@ -38,6 +40,7 @@ export default function AdminPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [newFamilyName, setNewFamilyName] = useState("");
   const [inviteCopied, setInviteCopied] = useState(false);
+  const [familyError, setFamilyError] = useState("");
   const [loading, setLoading] = useState(true);
 
   // 全体統計
@@ -164,13 +167,21 @@ export default function AdminPage() {
   async function createFamily(e: React.FormEvent) {
     e.preventDefault();
     if (!userId || !newFamilyName.trim()) return;
+    setFamilyError("");
 
     // RPC経由でファミリー作成+admin追加を1トランザクションで実行
     // （family_members INSERTはRLSで直接禁止されているためRPC必須）
     const { data: result, error } = await supabase
       .rpc("create_family_with_admin", { family_name: newFamilyName.trim() });
 
+    if (isMissingRpcError(error)) {
+      setFamilyError(getMissingRpcMessage("family_create"));
+      console.error("Family creation failed:", error);
+      return;
+    }
+
     if (error || !result || result.status === "error") {
+      setFamilyError("ファミリーを作成できませんでした。しばらくしてから再度お試しください。");
       console.error("Family creation failed:", error || result?.code);
       return;
     }
@@ -183,8 +194,15 @@ export default function AdminPage() {
 
   async function removeMember(memberId: string) {
     if (!isAdmin) return;
+    setFamilyError("");
     const { data: result, error } = await supabase.rpc("remove_family_member", { member_id: memberId });
+    if (isMissingRpcError(error)) {
+      setFamilyError(getMissingRpcMessage("family_remove"));
+      console.error("メンバー削除失敗:", error);
+      return;
+    }
     if (error || result?.status === "error") {
+      setFamilyError("メンバーを削除できませんでした。");
       console.error("メンバー削除失敗:", result?.code ?? error?.message);
       return;
     }
@@ -197,6 +215,15 @@ export default function AdminPage() {
     navigator.clipboard.writeText(url);
     setInviteCopied(true);
     setTimeout(() => setInviteCopied(false), 2000);
+  }
+
+  if (!isConfigured) {
+    return (
+      <ConfigRequired
+        title="設定画面はまだ利用できません"
+        message="Supabase の環境変数が未設定のため、家族管理やストレージ状況を読み込めません。"
+      />
+    );
   }
 
   if (loading) {
@@ -387,6 +414,9 @@ export default function AdminPage() {
                   >
                     ファミリーグループを作成
                   </button>
+                  {familyError && (
+                    <p className="text-sm text-red-400">{familyError}</p>
+                  )}
                 </form>
               </div>
             ) : (
@@ -394,6 +424,9 @@ export default function AdminPage() {
                 {/* Family info */}
                 <div className="bg-white rounded-2xl p-5 shadow-[0_4px_20px_rgba(216,27,96,0.08)]">
                   <h2 className="font-semibold text-lg text-gray-700 mb-4">{family.name}</h2>
+                  {familyError && (
+                    <p className="text-sm text-red-400 mb-3">{familyError}</p>
+                  )}
                   <div className="flex flex-wrap gap-4 items-center">
                     {isAdmin && (
                     <div className="flex-1 min-w-[200px]">

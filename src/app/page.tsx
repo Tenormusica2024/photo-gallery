@@ -26,13 +26,13 @@ const DEMO_PHOTOS: Photo[] = [
 export default function GalleryPage() {
   const [photos, setPhotos] = useState<Photo[]>(DEMO_PHOTOS);
   const [activeCategory, setActiveCategory] = useState("すべて");
-  const [isDemo, setIsDemo] = useState(true);
-  const [demoReason, setDemoReason] = useState<"not_configured" | "not_logged_in" | "empty">("not_configured");
+  const [isDemo, setIsDemo] = useState(!isConfigured);
+  const [demoReason, setDemoReason] = useState<"not_configured" | "not_logged_in" | "empty">(
+    isConfigured ? "empty" : "not_configured"
+  );
 
   useEffect(() => {
     if (!isConfigured) {
-      setIsDemo(true);
-      setDemoReason("not_configured");
       return;
     }
 

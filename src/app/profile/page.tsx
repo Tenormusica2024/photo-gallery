@@ -4,7 +4,8 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { supabase } from "@/lib/supabase";
+import ConfigRequired from "@/components/ConfigRequired";
+import { supabase, isConfigured } from "@/lib/supabase";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import type { Profile, Album } from "@/types/database";
 
@@ -140,6 +141,15 @@ export default function ProfilePage() {
       setNewAlbumTitle("");
       setShowNewAlbum(false);
     }
+  }
+
+  if (!isConfigured) {
+    return (
+      <ConfigRequired
+        title="プロフィールはまだ利用できません"
+        message="Supabase の環境変数が未設定のため、プロフィールやアルバム情報を読み込めません。"
+      />
+    );
   }
 
   if (loading) {

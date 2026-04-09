@@ -2,7 +2,8 @@
 
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import ConfigRequired from "@/components/ConfigRequired";
+import { supabase, isConfigured } from "@/lib/supabase";
 
 function LoginContent() {
   const router = useRouter();
@@ -16,6 +17,15 @@ function LoginContent() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+
+  if (!isConfigured) {
+    return (
+      <ConfigRequired
+        title="ログインはまだ利用できません"
+        message="Supabase の環境変数が未設定のため、認証機能を開始できません。設定後にログイン画面を利用してください。"
+      />
+    );
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

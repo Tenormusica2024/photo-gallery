@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase";
+import ConfigRequired from "@/components/ConfigRequired";
+import { supabase, isConfigured } from "@/lib/supabase";
 import type { Album, Photo } from "@/types/database";
 import MasonryGrid from "@/components/MasonryGrid";
 
@@ -50,6 +51,15 @@ export default function AlbumPage() {
     }
     load();
   }, [params.id, router]);
+
+  if (!isConfigured) {
+    return (
+      <ConfigRequired
+        title="アルバムはまだ利用できません"
+        message="Supabase の環境変数が未設定のため、アルバム一覧と写真を取得できません。"
+      />
+    );
+  }
 
   if (loading) {
     return (

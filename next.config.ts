@@ -21,6 +21,9 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  turbopack: {
+    root: __dirname,
+  },
   experimental: {
     // Supabase SDKのtree-shaking改善（使用モジュールのみバンドル）
     optimizePackageImports: ["@supabase/supabase-js"],

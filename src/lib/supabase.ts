@@ -1,4 +1,5 @@
-import { createClient } from "@supabase/supabase-js";
+import { createBrowserClient } from "@supabase/ssr";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
@@ -12,5 +13,5 @@ if (!isConfigured) {
 // 未設定時はクエリを実行しない（呼び出し側で isConfigured をチェック）
 // null! ではなく明示的に null を返し、型で未設定状態を表現
 export const supabase = isConfigured
-  ? createClient(supabaseUrl, supabaseAnonKey)
-  : (null as unknown as ReturnType<typeof createClient>);
+  ? createBrowserClient(supabaseUrl, supabaseAnonKey)
+  : (null as unknown as SupabaseClient);

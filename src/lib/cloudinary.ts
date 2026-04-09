@@ -8,6 +8,10 @@ interface CloudinaryUploadResult {
   height?: number;
 }
 
+interface CloudinaryDestroyResult {
+  result: string;
+}
+
 /**
  * Cloudinaryに署名付きアップロードを実行する
  * @param file アップロードするファイル
@@ -61,4 +65,22 @@ export async function uploadToCloudinary(
     width: data.width,
     height: data.height,
   };
+}
+
+export async function deleteFromCloudinary(
+  publicId: string,
+  resourceType: "image" | "video" = "image",
+): Promise<CloudinaryDestroyResult> {
+  const res = await fetch("/api/cloudinary-delete", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ publicId, resourceType }),
+  });
+
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.error || "Cloudinary削除失敗");
+  }
+
+  return res.json();
 }
