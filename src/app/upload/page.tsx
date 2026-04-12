@@ -46,6 +46,7 @@ export default function UploadPage() {
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [dragging, setDragging] = useState(false);
 
   useEffect(() => {
     async function init() {
@@ -122,6 +123,48 @@ export default function UploadPage() {
     }
     setFiles((prev) => prev.filter((_, i) => i !== index));
     setPreviews((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  // ドラッグ&ドロップで受け取ったファイルを handleFileSelect と同じバリデーションで処理
+  function processDroppedFiles(droppedFiles: File[]) {
+    const accepted = droppedFiles.filter((f) =>
+      /^(image\/(jpeg|png|webp)|video\/(mp4|quicktime))$/.test(f.type)
+    );
+    if (accepted.length === 0) return;
+    for (const file of accepted) {
+      const limit = isVideoFile(file) ? MAX_VIDEO_SIZE : MAX_IMAGE_SIZE;
+      const limitLabel = isVideoFile(file) ? "100MB" : "10MB";
+      if (file.size > limit) {
+        setError(`${file.name} のサイズが${limitLabel}を超えています`);
+        return;
+      }
+    }
+    setError("");
+    setFiles((prev) => [...prev, ...accepted]);
+    const newPreviews = accepted.map((f) => URL.createObjectURL(f));
+    setPreviews((prev) => [...prev, ...newPreviews]);
+  }
+
+  function handleDragOver(e: React.DragEvent) {
+    e.preventDefault();
+  }
+
+  function handleDragEnter(e: React.DragEvent) {
+    e.preventDefault();
+    setDragging(true);
+  }
+
+  function handleDragLeave(e: React.DragEvent) {
+    // 子要素へのカーソル移動では dragging を解除しない
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setDragging(false);
+    }
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setDragging(false);
+    processDroppedFiles(Array.from(e.dataTransfer.files));
   }
 
   async function handleUpload(e: React.FormEvent) {
@@ -229,11 +272,19 @@ export default function UploadPage() {
           {/* ドロップゾーン */}
           <div
             onClick={() => fileInputRef.current?.click()}
-            className="border-2 border-dashed border-pink-200 rounded-3xl p-10 text-center cursor-pointer hover:border-pink-400 hover:bg-pink-50/50 transition-all"
+            onDragOver={handleDragOver}
+            onDragEnter={handleDragEnter}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            className={`border-2 border-dashed rounded-3xl p-10 text-center cursor-pointer transition-all ${
+              dragging
+                ? "border-pink-400 bg-pink-50 scale-[1.01]"
+                : "border-pink-200 hover:border-pink-400 hover:bg-pink-50/50"
+            }`}
           >
             <div className="text-4xl text-pink-300 mb-2">+</div>
             <p className="text-gray-500 text-sm">
-              クリックして写真や動画を選択
+              クリックまたはドラッグ&ドロップで選択
             </p>
             <p className="text-gray-400 text-xs mt-1">
               JPG, PNG, WebP, MP4, MOV（写真: 10MB / 動画: 100MB）
