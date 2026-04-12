@@ -6,7 +6,7 @@ import Image from "next/image";
 import ConfigRequired from "@/components/ConfigRequired";
 import { supabase, isConfigured } from "@/lib/supabase";
 import { getMissingRpcMessage, isMissingRpcError } from "@/lib/supabase-errors";
-import type { Photo, FamilyGroup, FamilyMember, StorageUsage } from "@/types/database";
+import type { Photo, FamilyGroup, FamilyMember, FamilyMemberWithFamilyGroup, StorageUsage } from "@/types/database";
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return "0 B";
@@ -95,7 +95,8 @@ export default function AdminPage() {
           .single();
 
         if (membership) {
-          const fg = membership.family_groups as unknown as FamilyGroup;
+          // family_id FK保証: メンバーシップが存在すればファミリーも必ず存在する
+          const fg = (membership as FamilyMemberWithFamilyGroup).family_groups!;
           setFamily(fg);
           setIsAdmin(membership.role === "admin");
 
@@ -209,12 +210,18 @@ export default function AdminPage() {
     setMembers((prev) => prev.filter((m) => m.id !== memberId));
   }
 
-  function copyInviteLink() {
+  async function copyInviteLink() {
     if (!family) return;
+    setFamilyError("");
     const url = `${window.location.origin}/invite?code=${family.invite_code}`;
-    navigator.clipboard.writeText(url);
-    setInviteCopied(true);
-    setTimeout(() => setInviteCopied(false), 2000);
+    try {
+      await navigator.clipboard.writeText(url);
+      setInviteCopied(true);
+      setTimeout(() => setInviteCopied(false), 2000);
+    } catch (err) {
+      console.error("招待リンクのコピー失敗:", err);
+      setFamilyError("招待リンクをコピーできませんでした。");
+    }
   }
 
   if (!isConfigured) {
@@ -365,7 +372,7 @@ export default function AdminPage() {
                 <div className="space-y-2">
                   {storageData.map((su) => {
                     const member = members.find((m) => m.user_id === su.user_id);
-                    const name = (member?.profiles as unknown as { display_name: string })?.display_name || "不明";
+                    const name = member?.profiles?.display_name ?? "不明";
                     const pct = totalStorage > 0 ? (su.total_bytes / totalStorage) * 100 : 0;
                     return (
                       <div key={su.user_id} className="flex items-center gap-3">
@@ -456,7 +463,7 @@ export default function AdminPage() {
                   <h2 className="font-semibold text-sm text-gray-700 mb-3">メンバー</h2>
                   <div className="space-y-2">
                     {members.map((m) => {
-                      const p = m.profiles as unknown as { display_name: string; email: string } | undefined;
+                      const p = m.profiles;
                       return (
                         <div key={m.id} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
                           <div className="flex items-center gap-3">

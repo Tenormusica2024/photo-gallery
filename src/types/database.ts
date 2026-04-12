@@ -25,6 +25,11 @@ export interface FamilyMember {
   profiles?: Profile;
 }
 
+/** select("*, family_groups(*)") の結果型 */
+export interface FamilyMemberWithFamilyGroup extends FamilyMember {
+  family_groups: FamilyGroup | null;
+}
+
 export interface Album {
   id: string;
   user_id: string;
