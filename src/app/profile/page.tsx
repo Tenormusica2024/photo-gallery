@@ -58,11 +58,12 @@ export default function ProfilePage() {
           .single();
         if (profileData) setProfile(profileData);
 
-        // Load albums with photo counts
+        // Load albums with photo counts + cover photo URL
         // photos_album_id_fkeyを明示（albums_cover_photo_fkeyとの曖昧性を回避）
+        // cover photoはalbums_cover_photo_fkey経由でjoin
         const { data: albumsData } = await supabase
           .from("albums")
-          .select("*, photos!photos_album_id_fkey(count)")
+          .select("*, photos!photos_album_id_fkey(count), cover_photo:photos!albums_cover_photo_fkey(url)")
           .eq("user_id", user.id)
           .order("created_at", { ascending: false });
         if (albumsData) {
@@ -70,6 +71,7 @@ export default function ProfilePage() {
             albumsData.map((a: Record<string, unknown>) => ({
               ...a,
               photo_count: (a.photos as Array<{ count: number }>)?.[0]?.count ?? 0,
+              cover_photo_url: (a.cover_photo as { url: string } | null)?.url ?? null,
             })) as Album[]
           );
         }
@@ -94,15 +96,18 @@ export default function ProfilePage() {
     if (!profile || !editName.trim()) return;
     setError("");
     setSaving(true);
-    const { error } = await supabase
+    const { data: updated, error: dbError } = await supabase
       .from("profiles")
       .update({ display_name: editName.trim() })
-      .eq("id", profile.id);
-    if (!error) {
+      .eq("id", profile.id)
+      .select();
+    if (dbError) {
+      setError("プロフィールを保存できませんでした。");
+    } else if (!updated || updated.length === 0) {
+      setError("プロフィールを保存できませんでした（権限エラー）。");
+    } else {
       setProfile({ ...profile, display_name: editName.trim() });
       setEditing(false);
-    } else {
-      setError("プロフィールを保存できませんでした。");
     }
     setSaving(false);
   }
@@ -133,15 +138,18 @@ export default function ProfilePage() {
       const { secure_url: avatarUrl } = await uploadToCloudinary(file, "pastelalbum/avatars");
 
       // プロフィールに保存
-      const { error } = await supabase
+      const { data: updated, error: dbError } = await supabase
         .from("profiles")
         .update({ avatar_url: avatarUrl })
-        .eq("id", profile.id);
+        .eq("id", profile.id)
+        .select();
 
-      if (!error) {
-        setProfile({ ...profile, avatar_url: avatarUrl });
-      } else {
+      if (dbError) {
         setError("アバターを保存できませんでした。");
+      } else if (!updated || updated.length === 0) {
+        setError("アバターを保存できませんでした（権限エラー）。");
+      } else {
+        setProfile({ ...profile, avatar_url: avatarUrl });
       }
     } catch (err) {
       console.error("Avatar upload error:", err);
@@ -157,12 +165,12 @@ export default function ProfilePage() {
     if (!profile || !newAlbumTitle.trim()) return;
     setError("");
 
-    const { data, error } = await supabase
+    const { data, error: dbError } = await supabase
       .from("albums")
       .insert({ user_id: profile.id, title: newAlbumTitle.trim() })
       .select()
       .single();
-    if (!error && data) {
+    if (!dbError && data) {
       setAlbums((prev) => [{ ...data, photo_count: 0 }, ...prev]);
       setNewAlbumTitle("");
       setShowNewAlbum(false);
@@ -174,12 +182,12 @@ export default function ProfilePage() {
   async function renameAlbum(albumId: string) {
     if (!renameTitle.trim()) return;
     setError("");
-    const { data, error } = await supabase
+    const { data, error: dbError } = await supabase
       .from("albums")
       .update({ title: renameTitle.trim() })
       .eq("id", albumId)
       .select();
-    if (error) {
+    if (dbError) {
       setError("アルバム名を変更できませんでした。");
     } else if (!data || data.length === 0) {
       setError("アルバム名を変更できませんでした（権限エラー）。");
@@ -194,12 +202,12 @@ export default function ProfilePage() {
   async function deleteAlbum(albumId: string) {
     setError("");
     // .select()でRLSサイレント拒否を検出
-    const { data, error } = await supabase
+    const { data, error: dbError } = await supabase
       .from("albums")
       .delete()
       .eq("id", albumId)
       .select();
-    if (error) {
+    if (dbError) {
       setError("アルバムを削除できませんでした。");
     } else if (!data || data.length === 0) {
       setError("アルバムを削除できませんでした（権限エラー）。");
@@ -370,7 +378,7 @@ export default function ProfilePage() {
             {albums.map((album) => (
               <div
                 key={album.id}
-                className="relative bg-white rounded-2xl overflow-hidden shadow-[0_4px_20px_rgba(216,27,96,0.08)] hover:shadow-[0_8px_30px_rgba(216,27,96,0.15)] hover:-translate-y-1 transition-all"
+                className="group relative bg-white rounded-2xl overflow-hidden shadow-[0_4px_20px_rgba(216,27,96,0.08)] hover:shadow-[0_8px_30px_rgba(216,27,96,0.15)] hover:-translate-y-1 transition-all"
               >
                 {/* 削除確認オーバーレイ */}
                 {deletingAlbumId === album.id && (
@@ -379,7 +387,9 @@ export default function ProfilePage() {
                       「{album.title}」を削除しますか？
                     </p>
                     <p className="text-xs text-gray-400 text-center">
-                      写真はアルバムから外れますが削除されません
+                      {(album.photo_count || 0) > 0
+                        ? `${album.photo_count}枚の写真はアルバムから外れますが削除されません`
+                        : "空のアルバムです"}
                     </p>
                     <div className="flex gap-2">
                       <button
@@ -404,7 +414,7 @@ export default function ProfilePage() {
                     e.stopPropagation();
                     setAlbumMenuId(albumMenuId === album.id ? null : album.id);
                   }}
-                  className="absolute top-2 right-2 z-10 w-7 h-7 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center text-gray-400 hover:text-pink-500 hover:bg-white transition-all opacity-0 group-hover:opacity-100 [div:hover>&]:opacity-100"
+                  className="absolute top-2 right-2 z-10 w-7 h-7 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center text-gray-400 hover:text-pink-500 hover:bg-white transition-all opacity-0 group-hover:opacity-100"
                   aria-label="アルバムメニュー"
                 >
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
@@ -439,17 +449,17 @@ export default function ProfilePage() {
                   </div>
                 )}
 
-                <Link href={`/album/${album.id}`}>
-                  <div className="h-32 bg-gradient-to-br from-pink-100 to-lavender-100 flex items-center justify-center">
-                    <span className="text-3xl text-pink-300">&#9675;</span>
-                  </div>
-                  <div className="p-3">
-                    {/* インラインリネーム */}
-                    {renamingAlbumId === album.id ? (
-                      <div
-                        className="flex items-center gap-1"
-                        onClick={(e) => e.preventDefault()}
-                      >
+                {renamingAlbumId === album.id ? (
+                  <>
+                    <div className="h-32 bg-gradient-to-br from-pink-100 to-lavender-100 flex items-center justify-center overflow-hidden">
+                      {album.cover_photo_url ? (
+                        <Image src={album.cover_photo_url} alt={album.title} width={300} height={128} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-3xl text-pink-300">&#9675;</span>
+                      )}
+                    </div>
+                    <div className="p-3">
+                      <div className="flex items-center gap-1">
                         <input
                           type="text"
                           value={renameTitle}
@@ -460,25 +470,38 @@ export default function ProfilePage() {
                             if (e.key === "Enter") renameAlbum(album.id);
                             if (e.key === "Escape") setRenamingAlbumId(null);
                           }}
-                          onClick={(e) => e.preventDefault()}
                         />
                         <button
-                          onClick={(e) => { e.preventDefault(); renameAlbum(album.id); }}
+                          onClick={() => renameAlbum(album.id)}
                           className="text-pink-500 hover:text-pink-600 text-xs font-semibold shrink-0"
                         >
                           保存
                         </button>
                       </div>
-                    ) : (
+                      <p className="text-xs text-gray-400">
+                        {album.photo_count || 0} 枚
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                  <Link href={`/album/${album.id}`}>
+                    <div className="h-32 bg-gradient-to-br from-pink-100 to-lavender-100 flex items-center justify-center overflow-hidden">
+                      {album.cover_photo_url ? (
+                        <Image src={album.cover_photo_url} alt={album.title} width={300} height={128} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-3xl text-pink-300">&#9675;</span>
+                      )}
+                    </div>
+                    <div className="p-3">
                       <h4 className="font-semibold text-sm text-gray-700 truncate">
                         {album.title}
                       </h4>
-                    )}
-                    <p className="text-xs text-gray-400">
-                      {album.photo_count || 0} 枚
-                    </p>
-                  </div>
-                </Link>
+                      <p className="text-xs text-gray-400">
+                        {album.photo_count || 0} 枚
+                      </p>
+                    </div>
+                  </Link>
+                )}
               </div>
             ))}
           </div>
