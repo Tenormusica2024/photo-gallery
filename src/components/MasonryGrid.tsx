@@ -9,9 +9,10 @@ const Lightbox = lazy(() => import("./Lightbox"));
 
 interface Props {
   photos: Photo[];
+  albumMap?: Record<string, string>;
 }
 
-export default function MasonryGrid({ photos }: Props) {
+export default function MasonryGrid({ photos, albumMap }: Props) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
   return (
@@ -67,6 +68,14 @@ export default function MasonryGrid({ photos }: Props) {
                 <p className="text-white/70 text-xs mt-0.5">
                   {new Date(photo.created_at).toLocaleDateString("ja-JP")}
                 </p>
+                {photo.album_id && albumMap?.[photo.album_id] && (
+                  <p className="text-purple-200 text-xs mt-1 flex items-center gap-1">
+                    <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                    </svg>
+                    <span className="truncate">{albumMap[photo.album_id]}</span>
+                  </p>
+                )}
               </div>
             </div>
           );

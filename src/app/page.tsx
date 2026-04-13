@@ -7,6 +7,11 @@ import type { Photo } from "@/types/database";
 import MasonryGrid from "@/components/MasonryGrid";
 
 const CATEGORIES = ["すべて", "写真", "動画"];
+type SortKey = "uploaded_at" | "created_at";
+const SORT_OPTIONS: { key: SortKey; label: string }[] = [
+  { key: "uploaded_at", label: "追加日" },
+  { key: "created_at", label: "撮影日" },
+];
 
 // Demo photos (used when Supabase is not configured or DB is empty)
 // デモ用写真データ（Supabase未設定時のフォールバック）
@@ -24,9 +29,13 @@ const DEMO_PHOTOS: Photo[] = [
 ];
 
 export default function GalleryPage() {
-  const [photos, setPhotos] = useState<Photo[]>(DEMO_PHOTOS);
+  const [photos, setPhotos] = useState<Photo[]>(isConfigured ? [] : DEMO_PHOTOS);
   const [activeCategory, setActiveCategory] = useState("すべて");
+  const [sortKey, setSortKey] = useState<SortKey>("uploaded_at");
+  const [sortAsc, setSortAsc] = useState(false);
   const [isDemo, setIsDemo] = useState(!isConfigured);
+  const [loading, setLoading] = useState(isConfigured);
+  const [albumMap, setAlbumMap] = useState<Record<string, string>>({});
   const [demoReason, setDemoReason] = useState<"not_configured" | "not_logged_in" | "empty">(
     isConfigured ? "empty" : "not_configured"
   );
@@ -41,6 +50,7 @@ export default function GalleryPage() {
         // セッションキャッシュからユーザー確認（サーバーリクエスト不要）
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
+          setPhotos(DEMO_PHOTOS);
           setIsDemo(true);
           setDemoReason("not_logged_in");
           return;
@@ -54,12 +64,24 @@ export default function GalleryPage() {
         if (!error && data && data.length > 0) {
           setPhotos(data);
           setIsDemo(false);
+
+          // アルバム名マップを構築（ホバー表示用）
+          const { data: albumData } = await supabase
+            .from("albums")
+            .select("id, title");
+          if (albumData) {
+            const map: Record<string, string> = {};
+            for (const a of albumData) map[a.id] = a.title;
+            setAlbumMap(map);
+          }
           return;
         }
         setIsDemo(true);
         setDemoReason("empty");
       } catch (err) {
         console.error("Gallery load error:", err);
+      } finally {
+        setLoading(false);
       }
     }
     loadPhotos();
@@ -92,6 +114,30 @@ export default function GalleryPage() {
             </button>
           ))}
         </div>
+
+        {/* Sort controls */}
+        <div className="flex gap-2 justify-center items-center mt-4">
+          {SORT_OPTIONS.map((opt) => (
+            <button
+              key={opt.key}
+              onClick={() => {
+                if (sortKey === opt.key) {
+                  setSortAsc((prev) => !prev);
+                } else {
+                  setSortKey(opt.key);
+                  setSortAsc(false);
+                }
+              }}
+              className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${
+                sortKey === opt.key
+                  ? "bg-purple-100 border-purple-200 text-purple-600"
+                  : "bg-white border-gray-200 text-gray-400 hover:bg-purple-50"
+              }`}
+            >
+              {opt.label} {sortKey === opt.key ? (sortAsc ? "\u2191" : "\u2193") : ""}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Demo banner */}
@@ -107,15 +153,27 @@ export default function GalleryPage() {
 
       {/* Masonry gallery（カテゴリでフィルタリング） */}
       <div className="max-w-5xl mx-auto px-4 py-6">
-        <MasonryGrid
-          photos={
-            activeCategory === "すべて"
-              ? photos
-              : activeCategory === "写真"
-              ? photos.filter((p) => p.media_type === "image")
-              : photos.filter((p) => p.media_type === "video")
-          }
-        />
+        {loading ? (
+          <div className="flex justify-center py-16">
+            <div className="w-8 h-8 border-3 border-pink-200 border-t-pink-500 rounded-full animate-spin" />
+          </div>
+        ) : (
+          <MasonryGrid
+            photos={
+              (activeCategory === "すべて"
+                ? photos
+                : activeCategory === "写真"
+                ? photos.filter((p) => p.media_type === "image")
+                : photos.filter((p) => p.media_type === "video")
+              ).slice().sort((a, b) => {
+                const da = new Date(a[sortKey]).getTime();
+                const db = new Date(b[sortKey]).getTime();
+                return sortAsc ? da - db : db - da;
+              })
+            }
+            albumMap={albumMap}
+          />
+        )}
       </div>
 
       {/* Upload FAB */}
