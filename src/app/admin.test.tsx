@@ -452,7 +452,7 @@ describe("admin page", () => {
     render(<AdminPage />);
 
     fireEvent.click(await screen.findByRole("button", { name: "ファミリー" }));
-    const taroRow = screen.getByText("Taro").closest("div.flex.items-center.justify-between.py-2.border-b.border-gray-50.last\\:border-0");
+    const taroRow = screen.getByText("Taro").closest("div");
     expect(taroRow).not.toBeNull();
     fireEvent.click(within(taroRow as HTMLElement).getByRole("button", { name: "削除" }));
 
@@ -561,6 +561,103 @@ describe("admin page", () => {
 
     expect(clipboardWriteTextMock).toHaveBeenCalledWith("http://localhost:3000/invite?code=INVITE123");
     expect(await screen.findByRole("button", { name: "コピー済み" })).toBeInTheDocument();
+  });
+
+  it("shows an inline error when invite link copy fails", async () => {
+    fromMock.mockImplementation((table: string) => {
+      if (table === "photos") {
+        return {
+          select: vi.fn().mockImplementation((columns: string) => {
+            if (columns === "media_type, file_size") {
+              return Promise.resolve({ data: [], error: null });
+            }
+
+            return {
+              order: vi.fn().mockReturnValue({
+                limit: vi.fn().mockResolvedValue({
+                  data: [],
+                  error: null,
+                }),
+              }),
+            };
+          }),
+        };
+      }
+
+      if (table === "family_members") {
+        return {
+          select: vi.fn().mockImplementation((columns: string) => {
+            if (columns === "*, family_groups(*)") {
+              return createMembershipQuery({
+                data: {
+                  id: "member-1",
+                  user_id: "user-1",
+                  role: "admin",
+                  family_groups: {
+                    id: "family-1",
+                    name: "田中ファミリー",
+                    invite_code: "INVITE123",
+                  },
+                },
+                error: null,
+              });
+            }
+
+            return createMemberListQuery({
+              data: [
+                {
+                  id: "member-1",
+                  user_id: "user-1",
+                  family_id: "family-1",
+                  role: "admin",
+                  profiles: {
+                    display_name: "Hanako",
+                    email: "hanako@example.com",
+                  },
+                },
+              ],
+              error: null,
+            });
+          }),
+        };
+      }
+
+      if (table === "storage_usage") {
+        return {
+          select: vi.fn().mockReturnValue({
+            in: vi.fn().mockResolvedValue({
+              data: [],
+              error: null,
+            }),
+          }),
+        };
+      }
+
+      return {
+        select: vi.fn(),
+      };
+    });
+
+    clipboardWriteTextMock.mockRejectedValue(new Error("denied"));
+
+    vi.doMock("@/lib/supabase", () => ({
+      isConfigured: true,
+      supabase: {
+        auth: { getSession: getSessionMock },
+        from: fromMock,
+        rpc: rpcMock,
+      },
+    }));
+
+    const { default: AdminPage } = await import("./admin/page");
+    render(<AdminPage />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "ファミリー" }));
+    fireEvent.click(await screen.findByRole("button", { name: "リンクをコピー" }));
+
+    expect(
+      await screen.findByText("招待リンクをコピーできませんでした。")
+    ).toBeInTheDocument();
   });
 
   it("shows masked error logs for admins when an action fails", async () => {

@@ -181,4 +181,93 @@ describe("profile page", () => {
       expect(updateEqMock).toHaveBeenCalledWith("id", "user-1");
     });
   });
+
+  it("shows an inline error when avatar validation fails", async () => {
+    vi.doMock("@/lib/supabase", () => ({
+      isConfigured: true,
+      supabase: {
+        auth: { getSession: getSessionMock },
+        from: fromMock,
+      },
+    }));
+
+    const { default: ProfilePage } = await import("./profile/page");
+    const { container } = render(<ProfilePage />);
+
+    await screen.findByText("Hanako");
+    const input = container.querySelector('input[type="file"]');
+    const invalidFile = new File(["bad"], "avatar.bmp", { type: "image/bmp" });
+
+    fireEvent.change(input as HTMLInputElement, {
+      target: { files: [invalidFile] },
+    });
+
+    expect(
+      await screen.findByText("対応している画像形式: JPG, PNG, WebP, GIF")
+    ).toBeInTheDocument();
+  });
+
+  it("shows an inline error when album creation fails", async () => {
+    fromMock.mockImplementation((table: string) => {
+      if (table === "profiles") {
+        return createQueryBuilder({
+          data: {
+            id: "user-1",
+            email: "family@example.com",
+            display_name: "Hanako",
+            avatar_url: null,
+            role: "user",
+            created_at: "2025-01-01",
+          },
+          error: null,
+        });
+      }
+
+      if (table === "albums") {
+        return {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          order: vi.fn().mockResolvedValue({ data: [], error: null }),
+          insert: vi.fn().mockReturnValue({
+            select: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue({
+                data: null,
+                error: { message: "insert failed" },
+              }),
+            }),
+          }),
+        };
+      }
+
+      if (table === "photos") {
+        return {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockResolvedValue({ count: 0 }),
+        };
+      }
+
+      return createQueryBuilder({ data: null, error: null });
+    });
+
+    vi.doMock("@/lib/supabase", () => ({
+      isConfigured: true,
+      supabase: {
+        auth: { getSession: getSessionMock },
+        from: fromMock,
+      },
+    }));
+
+    const { default: ProfilePage } = await import("./profile/page");
+    render(<ProfilePage />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "+ 新しいアルバム" }));
+    fireEvent.change(screen.getByPlaceholderText("アルバム名"), {
+      target: { value: "夏休み" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "作成" }));
+
+    expect(
+      await screen.findByText("アルバムを作成できませんでした。")
+    ).toBeInTheDocument();
+  });
 });

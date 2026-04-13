@@ -40,7 +40,16 @@ export default function Nav() {
   }, []);
 
   async function handleSignOut() {
-    await supabase.auth.signOut();
+    if (!isConfigured) {
+      router.push("/login");
+      return;
+    }
+
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error("Sign out failed:", error);
+      return;
+    }
     router.push("/login");
   }
 
@@ -114,7 +123,10 @@ export default function Nav() {
             )}
             {user ? (
               <button
-                onClick={() => { handleSignOut(); setMenuOpen(false); }}
+                onClick={async () => {
+                  setMenuOpen(false);
+                  await handleSignOut();
+                }}
                 className="text-sm font-semibold text-gray-500 hover:text-pink-600 transition-colors text-left"
               >
                 ログアウト

@@ -28,3 +28,5 @@
 - proxy.tsでgetUser()を使うとページ遷移ごとにサーバーリクエストが発生するが、セッションリフレッシュ目的では必要（クライアント側のgetSession()と使い分ける）
 - RLSで直接INSERTを禁止（with check false）した場合、adminの初期メンバー追加も含めて全てSECURITY DEFINER RPCに移行する必要がある
 - INSERT ON CONFLICTを使ってrace conditionを防止する。read-then-insertパターンは並行リクエストで破綻する
+- テーブル間に複数のFK関係がある場合、PostgRESTの埋め込みリソース（`.select("*, related_table(count)")`等）は曖昧性エラー（PGRST201）になる。明示的にFK制約名を指定する（例: `photos!photos_album_id_fkey(count)`）。エラーは`data`がnullになるだけで`if (data)`チェックをすり抜けるため、発見が遅れやすい
+- Supabaseの`.update().eq()`はRLSがブロックしてもエラーを返さず0行更新になる。`.update().eq().select()`とチェーンし、返却データが空なら権限エラーとして検出する
