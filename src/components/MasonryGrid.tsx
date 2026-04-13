@@ -10,9 +10,10 @@ const Lightbox = lazy(() => import("./Lightbox"));
 interface Props {
   photos: Photo[];
   albumMap?: Record<string, string>;
+  onPhotoUpdate?: (updated: Photo) => void;
 }
 
-export default function MasonryGrid({ photos, albumMap }: Props) {
+export default function MasonryGrid({ photos, albumMap, onPhotoUpdate }: Props) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
   return (
@@ -89,6 +90,7 @@ export default function MasonryGrid({ photos, albumMap }: Props) {
             currentIndex={selectedIndex}
             onClose={() => setSelectedIndex(null)}
             onNavigate={setSelectedIndex}
+            onPhotoUpdate={onPhotoUpdate}
           />
         </Suspense>
       )}

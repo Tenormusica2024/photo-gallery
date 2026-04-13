@@ -172,6 +172,10 @@ export default function GalleryPage() {
               })
             }
             albumMap={albumMap}
+            onPhotoUpdate={(updated) => {
+              // Lightboxでアルバム変更された写真をローカルstateに反映
+              setPhotos((prev) => prev.map((p) => p.id === updated.id ? updated : p));
+            }}
           />
         )}
       </div>
