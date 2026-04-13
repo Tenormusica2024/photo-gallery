@@ -50,7 +50,7 @@ export default function ProfilePage() {
           .select("*, photos(count)")
           .eq("user_id", user.id)
           .order("created_at", { ascending: false });
-        console.log("[profile] albums query:", { userId: user.id, count: albumsData?.length, error: albumsError, data: albumsData });
+        console.log("[profile] albums query:", JSON.stringify({ userId: user.id, count: albumsData?.length, error: albumsError }));
         if (albumsData) {
           setAlbums(
             albumsData.map((a: Record<string, unknown>) => ({
