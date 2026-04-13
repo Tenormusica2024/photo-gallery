@@ -45,12 +45,12 @@ export default function ProfilePage() {
         if (profileData) setProfile(profileData);
 
         // Load albums with photo counts
-        const { data: albumsData, error: albumsError } = await supabase
+        // photos_album_id_fkeyを明示（albums_cover_photo_fkeyとの曖昧性を回避）
+        const { data: albumsData } = await supabase
           .from("albums")
-          .select("*, photos(count)")
+          .select("*, photos!photos_album_id_fkey(count)")
           .eq("user_id", user.id)
           .order("created_at", { ascending: false });
-        console.log("[profile] albums query:", JSON.stringify({ userId: user.id, count: albumsData?.length, error: albumsError }));
         if (albumsData) {
           setAlbums(
             albumsData.map((a: Record<string, unknown>) => ({
@@ -148,8 +148,6 @@ export default function ProfilePage() {
       .insert({ user_id: profile.id, title: newAlbumTitle.trim() })
       .select()
       .single();
-    console.log("[profile] album create:", { profileId: profile.id, data, error });
-
     if (!error && data) {
       setAlbums((prev) => [{ ...data, photo_count: 0 }, ...prev]);
       setNewAlbumTitle("");
