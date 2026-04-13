@@ -26,6 +26,20 @@ export default function ProfilePage() {
   const [error, setError] = useState("");
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
+  // アルバム管理
+  const [albumMenuId, setAlbumMenuId] = useState<string | null>(null);
+  const [renamingAlbumId, setRenamingAlbumId] = useState<string | null>(null);
+  const [renameTitle, setRenameTitle] = useState("");
+  const [deletingAlbumId, setDeletingAlbumId] = useState<string | null>(null);
+
+  // メニュー外クリックで閉じる
+  useEffect(() => {
+    if (!albumMenuId) return;
+    const handler = () => setAlbumMenuId(null);
+    document.addEventListener("click", handler);
+    return () => document.removeEventListener("click", handler);
+  }, [albumMenuId]);
+
   useEffect(() => {
     async function load() {
       try {
@@ -154,6 +168,44 @@ export default function ProfilePage() {
       setShowNewAlbum(false);
     } else {
       setError("アルバムを作成できませんでした。");
+    }
+  }
+
+  async function renameAlbum(albumId: string) {
+    if (!renameTitle.trim()) return;
+    setError("");
+    const { data, error } = await supabase
+      .from("albums")
+      .update({ title: renameTitle.trim() })
+      .eq("id", albumId)
+      .select();
+    if (error) {
+      setError("アルバム名を変更できませんでした。");
+    } else if (!data || data.length === 0) {
+      setError("アルバム名を変更できませんでした（権限エラー）。");
+    } else {
+      setAlbums((prev) =>
+        prev.map((a) => (a.id === albumId ? { ...a, title: renameTitle.trim() } : a))
+      );
+      setRenamingAlbumId(null);
+    }
+  }
+
+  async function deleteAlbum(albumId: string) {
+    setError("");
+    // .select()でRLSサイレント拒否を検出
+    const { data, error } = await supabase
+      .from("albums")
+      .delete()
+      .eq("id", albumId)
+      .select();
+    if (error) {
+      setError("アルバムを削除できませんでした。");
+    } else if (!data || data.length === 0) {
+      setError("アルバムを削除できませんでした（権限エラー）。");
+    } else {
+      setAlbums((prev) => prev.filter((a) => a.id !== albumId));
+      setDeletingAlbumId(null);
     }
   }
 
@@ -316,23 +368,118 @@ export default function ProfilePage() {
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {albums.map((album) => (
-              <Link
+              <div
                 key={album.id}
-                href={`/album/${album.id}`}
-                className="bg-white rounded-2xl overflow-hidden shadow-[0_4px_20px_rgba(216,27,96,0.08)] hover:shadow-[0_8px_30px_rgba(216,27,96,0.15)] hover:-translate-y-1 transition-all"
+                className="relative bg-white rounded-2xl overflow-hidden shadow-[0_4px_20px_rgba(216,27,96,0.08)] hover:shadow-[0_8px_30px_rgba(216,27,96,0.15)] hover:-translate-y-1 transition-all"
               >
-                <div className="h-32 bg-gradient-to-br from-pink-100 to-lavender-100 flex items-center justify-center">
-                  <span className="text-3xl text-pink-300">&#9675;</span>
-                </div>
-                <div className="p-3">
-                  <h4 className="font-semibold text-sm text-gray-700 truncate">
-                    {album.title}
-                  </h4>
-                  <p className="text-xs text-gray-400">
-                    {album.photo_count || 0} 枚
-                  </p>
-                </div>
-              </Link>
+                {/* 削除確認オーバーレイ */}
+                {deletingAlbumId === album.id && (
+                  <div className="absolute inset-0 z-20 bg-white/95 backdrop-blur-sm flex flex-col items-center justify-center gap-3 p-4 rounded-2xl">
+                    <p className="text-sm text-gray-700 text-center">
+                      「{album.title}」を削除しますか？
+                    </p>
+                    <p className="text-xs text-gray-400 text-center">
+                      写真はアルバムから外れますが削除されません
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => deleteAlbum(album.id)}
+                        className="px-4 py-1.5 bg-red-400 text-white text-xs font-bold rounded-full hover:bg-red-500 transition-colors"
+                      >
+                        削除
+                      </button>
+                      <button
+                        onClick={() => setDeletingAlbumId(null)}
+                        className="px-4 py-1.5 bg-gray-100 text-gray-500 text-xs font-bold rounded-full hover:bg-gray-200 transition-colors"
+                      >
+                        キャンセル
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* メニューボタン */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setAlbumMenuId(albumMenuId === album.id ? null : album.id);
+                  }}
+                  className="absolute top-2 right-2 z-10 w-7 h-7 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center text-gray-400 hover:text-pink-500 hover:bg-white transition-all opacity-0 group-hover:opacity-100 [div:hover>&]:opacity-100"
+                  aria-label="アルバムメニュー"
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                    <circle cx="12" cy="6" r="1.5" />
+                    <circle cx="12" cy="12" r="1.5" />
+                    <circle cx="12" cy="18" r="1.5" />
+                  </svg>
+                </button>
+
+                {/* ドロップダウンメニュー */}
+                {albumMenuId === album.id && (
+                  <div className="absolute top-10 right-2 z-20 bg-white rounded-xl shadow-lg border border-pink-100 py-1 min-w-[120px]">
+                    <button
+                      onClick={() => {
+                        setRenameTitle(album.title);
+                        setRenamingAlbumId(album.id);
+                        setAlbumMenuId(null);
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-gray-600 hover:bg-pink-50 hover:text-pink-600 transition-colors"
+                    >
+                      名前を変更
+                    </button>
+                    <button
+                      onClick={() => {
+                        setDeletingAlbumId(album.id);
+                        setAlbumMenuId(null);
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-red-50 hover:text-red-500 transition-colors"
+                    >
+                      削除
+                    </button>
+                  </div>
+                )}
+
+                <Link href={`/album/${album.id}`}>
+                  <div className="h-32 bg-gradient-to-br from-pink-100 to-lavender-100 flex items-center justify-center">
+                    <span className="text-3xl text-pink-300">&#9675;</span>
+                  </div>
+                  <div className="p-3">
+                    {/* インラインリネーム */}
+                    {renamingAlbumId === album.id ? (
+                      <div
+                        className="flex items-center gap-1"
+                        onClick={(e) => e.preventDefault()}
+                      >
+                        <input
+                          type="text"
+                          value={renameTitle}
+                          onChange={(e) => setRenameTitle(e.target.value)}
+                          className="flex-1 min-w-0 px-2 py-0.5 border border-pink-200 rounded-lg text-sm text-gray-700 outline-none focus:border-pink-400"
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") renameAlbum(album.id);
+                            if (e.key === "Escape") setRenamingAlbumId(null);
+                          }}
+                          onClick={(e) => e.preventDefault()}
+                        />
+                        <button
+                          onClick={(e) => { e.preventDefault(); renameAlbum(album.id); }}
+                          className="text-pink-500 hover:text-pink-600 text-xs font-semibold shrink-0"
+                        >
+                          保存
+                        </button>
+                      </div>
+                    ) : (
+                      <h4 className="font-semibold text-sm text-gray-700 truncate">
+                        {album.title}
+                      </h4>
+                    )}
+                    <p className="text-xs text-gray-400">
+                      {album.photo_count || 0} 枚
+                    </p>
+                  </div>
+                </Link>
+              </div>
             ))}
           </div>
         )}
