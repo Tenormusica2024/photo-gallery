@@ -23,6 +23,7 @@ export default function ProfilePage() {
   const [editName, setEditName] = useState("");
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -44,11 +45,12 @@ export default function ProfilePage() {
         if (profileData) setProfile(profileData);
 
         // Load albums with photo counts
-        const { data: albumsData } = await supabase
+        const { data: albumsData, error: albumsError } = await supabase
           .from("albums")
           .select("*, photos(count)")
           .eq("user_id", user.id)
           .order("created_at", { ascending: false });
+        console.log("[profile] albums query:", { userId: user.id, count: albumsData?.length, error: albumsError, data: albumsData });
         if (albumsData) {
           setAlbums(
             albumsData.map((a: Record<string, unknown>) => ({
@@ -76,6 +78,7 @@ export default function ProfilePage() {
   // プロフィール保存
   async function saveProfile() {
     if (!profile || !editName.trim()) return;
+    setError("");
     setSaving(true);
     const { error } = await supabase
       .from("profiles")
@@ -84,6 +87,8 @@ export default function ProfilePage() {
     if (!error) {
       setProfile({ ...profile, display_name: editName.trim() });
       setEditing(false);
+    } else {
+      setError("プロフィールを保存できませんでした。");
     }
     setSaving(false);
   }
@@ -92,17 +97,20 @@ export default function ProfilePage() {
   async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file || !profile) return;
+    setError("");
 
     // ファイル形式チェック（画像のみ許可）
     const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
     if (!allowedTypes.includes(file.type)) {
-      alert("対応している画像形式: JPG, PNG, WebP, GIF");
+      setError("対応している画像形式: JPG, PNG, WebP, GIF");
+      e.target.value = "";
       return;
     }
 
     // 5MB制限
     if (file.size > 5 * 1024 * 1024) {
-      alert("5MB以下の画像を選択してください");
+      setError("5MB以下の画像を選択してください");
+      e.target.value = "";
       return;
     }
 
@@ -118,28 +126,36 @@ export default function ProfilePage() {
 
       if (!error) {
         setProfile({ ...profile, avatar_url: avatarUrl });
+      } else {
+        setError("アバターを保存できませんでした。");
       }
     } catch (err) {
       console.error("Avatar upload error:", err);
+      setError("アバターのアップロードに失敗しました。");
     } finally {
       setAvatarUploading(false);
+      e.target.value = "";
     }
   }
 
   async function createAlbum(e: React.FormEvent) {
     e.preventDefault();
     if (!profile || !newAlbumTitle.trim()) return;
+    setError("");
 
     const { data, error } = await supabase
       .from("albums")
       .insert({ user_id: profile.id, title: newAlbumTitle.trim() })
       .select()
       .single();
+    console.log("[profile] album create:", { profileId: profile.id, data, error });
 
     if (!error && data) {
       setAlbums((prev) => [{ ...data, photo_count: 0 }, ...prev]);
       setNewAlbumTitle("");
       setShowNewAlbum(false);
+    } else {
+      setError("アルバムを作成できませんでした。");
     }
   }
 
@@ -245,6 +261,7 @@ export default function ProfilePage() {
           </div>
         )}
         <p className="text-gray-500 text-sm">{profile?.email}</p>
+        {error && <p className="text-red-400 text-sm mt-2">{error}</p>}
 
         {/* Stats */}
         <div className="flex gap-8 justify-center mt-4">
