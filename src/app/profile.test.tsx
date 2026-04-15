@@ -39,14 +39,24 @@ vi.mock("@/lib/cloudinary", () => ({
   uploadToCloudinary: uploadToCloudinaryMock,
 }));
 
-function createQueryBuilder(result: unknown) {
+// readResult: select/eq/order/single（読み込み）用の返り値
+// insertResult: insert→select→single（挿入）用の返り値。省略時はreadResultと同じ
+function createQueryBuilder(
+  readResult: unknown,
+  insertResult?: unknown,
+) {
+  const effectiveInsertResult = insertResult ?? readResult;
   return {
     select: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),
-    order: vi.fn().mockResolvedValue(result),
-    single: vi.fn().mockResolvedValue(result),
+    order: vi.fn().mockResolvedValue(readResult),
+    single: vi.fn().mockResolvedValue(readResult),
     update: vi.fn().mockReturnThis(),
-    insert: vi.fn().mockReturnThis(),
+    insert: vi.fn().mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        single: vi.fn().mockResolvedValue(effectiveInsertResult),
+      }),
+    }),
   };
 }
 
