@@ -128,7 +128,20 @@ describe("profile page", () => {
   });
 
   it("saves a renamed display name", async () => {
-    const updateEqMock = vi.fn().mockResolvedValue({ error: null });
+    const updateSelectMock = vi.fn().mockResolvedValue({
+      data: [
+        {
+          id: "user-1",
+          email: "family@example.com",
+          display_name: "Sakura",
+          avatar_url: null,
+          role: "user",
+          created_at: "2025-01-01",
+        },
+      ],
+      error: null,
+    });
+    const updateEqMock = vi.fn().mockReturnValue({ select: updateSelectMock });
     const updateMock = vi.fn().mockReturnValue({ eq: updateEqMock });
     const selectSingleMock = vi.fn().mockResolvedValue({
       data: {
@@ -189,6 +202,7 @@ describe("profile page", () => {
     await waitFor(() => {
       expect(updateMock).toHaveBeenCalledWith({ display_name: "Sakura" });
       expect(updateEqMock).toHaveBeenCalledWith("id", "user-1");
+      expect(updateSelectMock).toHaveBeenCalled();
     });
   });
 

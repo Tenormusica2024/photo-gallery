@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const pushMock = vi.fn();
@@ -452,9 +452,7 @@ describe("admin page", () => {
     render(<AdminPage />);
 
     fireEvent.click(await screen.findByRole("button", { name: "ファミリー" }));
-    const taroRow = screen.getByText("Taro").closest("div");
-    expect(taroRow).not.toBeNull();
-    fireEvent.click(within(taroRow as HTMLElement).getByRole("button", { name: "削除" }));
+    fireEvent.click(screen.getByRole("button", { name: "削除" }));
 
     await waitFor(() => {
       expect(rpcMock).toHaveBeenCalledWith("remove_family_member", {
