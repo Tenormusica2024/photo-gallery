@@ -39,14 +39,24 @@ vi.mock("@/lib/cloudinary", () => ({
   uploadToCloudinary: uploadToCloudinaryMock,
 }));
 
-function createQueryBuilder(result: unknown) {
+// readResult: select/eq/order/single（読み込み）用の返り値
+// insertResult: insert→select→single（挿入）用の返り値。省略時はreadResultと同じ
+function createQueryBuilder(
+  readResult: unknown,
+  insertResult?: unknown,
+) {
+  const effectiveInsertResult = insertResult ?? readResult;
   return {
     select: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),
-    order: vi.fn().mockResolvedValue(result),
-    single: vi.fn().mockResolvedValue(result),
+    order: vi.fn().mockResolvedValue(readResult),
+    single: vi.fn().mockResolvedValue(readResult),
     update: vi.fn().mockReturnThis(),
-    insert: vi.fn().mockReturnThis(),
+    insert: vi.fn().mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        single: vi.fn().mockResolvedValue(effectiveInsertResult),
+      }),
+    }),
   };
 }
 
@@ -118,7 +128,20 @@ describe("profile page", () => {
   });
 
   it("saves a renamed display name", async () => {
-    const updateEqMock = vi.fn().mockResolvedValue({ error: null });
+    const updateSelectMock = vi.fn().mockResolvedValue({
+      data: [
+        {
+          id: "user-1",
+          email: "family@example.com",
+          display_name: "Sakura",
+          avatar_url: null,
+          role: "user",
+          created_at: "2025-01-01",
+        },
+      ],
+      error: null,
+    });
+    const updateEqMock = vi.fn().mockReturnValue({ select: updateSelectMock });
     const updateMock = vi.fn().mockReturnValue({ eq: updateEqMock });
     const selectSingleMock = vi.fn().mockResolvedValue({
       data: {
@@ -179,6 +202,7 @@ describe("profile page", () => {
     await waitFor(() => {
       expect(updateMock).toHaveBeenCalledWith({ display_name: "Sakura" });
       expect(updateEqMock).toHaveBeenCalledWith("id", "user-1");
+      expect(updateSelectMock).toHaveBeenCalled();
     });
   });
 

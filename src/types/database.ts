@@ -40,6 +40,8 @@ export interface Album {
   created_at: string;
   updated_at: string;
   photo_count?: number;
+  // cover_photo_id経由でjoinしたカバー写真URL
+  cover_photo_url?: string | null;
 }
 
 export interface Photo {

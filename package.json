@@ -10,6 +10,7 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
+    "verify:demo": "npm run lint && npm test && npm run build",
     "test:e2e": "playwright test",
     "check:supabase-rpcs": "node scripts/check-supabase-rpcs.mjs",
     "push:supabase-migrations": "node scripts/push-supabase-migrations.mjs",

@@ -20,6 +20,15 @@
 
 ## セットアップ
 
+この repo には大きく 3 段階ある:
+
+1. **demo mode**  
+   Supabase / Cloudinary 未設定でも、画面構造とビルド健全性だけ確認する段階
+2. **integration setup**  
+   専用 Supabase project と Cloudinary をつないで認証・招待・アップロードまで有効化する段階
+3. **post-setup validation**  
+   migration / RPC / E2E を含めて本番に近い確認をする段階
+
 ### 1. 依存関係のインストール
 
 ```bash
@@ -104,6 +113,22 @@ npm run dev
 ```
 
 `http://localhost:3000` を開いて確認します。
+
+## Demo mode validation
+
+fresh clone 直後に **「この fork は最低限 healthy か」** を見たいだけなら、まずは integration 系コマンドを混ぜずに次だけでよい。
+
+```bash
+npm run verify:demo
+```
+
+これは次をまとめて実行する:
+
+- `npm run lint`
+- `npm test`
+- `npm run build`
+
+Supabase / Cloudinary 未設定でも、demo 表示前提の UI とビルド健全性を確認できる。
 
 ## Cloudinary アップロードについて
 
@@ -204,14 +229,32 @@ node scripts/audit-cloudinary-assets.mjs --cleanup
 
 ## 品質確認
 
-最低限、変更時には以下を実行してください。
+### Post-setup validation
+
+Supabase migration 済み・必要 secret 設定済みの状態では、次も実行する。
 
 ```bash
-npm test
+npm run verify:demo
+npm run check:supabase-rpcs
 npm run test:e2e
+npm run audit:cloudinary
+```
+
+補足:
+
+- `npm run verify:demo` は demo mode でも使える軽量確認
+- `npm run check:supabase-rpcs` と `npm run push:supabase-migrations` は **integration setup 後**
+- `npm run test:e2e` は認証・招待・アップロードを含むため、Supabase / Cloudinary が実接続できる状態で回す
+
+### Integration-only operations
+
+専用 Supabase project と secret が揃った後に使うもの:
+
+```bash
+npm run push:supabase-migrations
 npm run check:supabase-rpcs
 npm run lint
-npm run build
+npm run test:e2e
 ```
 
 ## テストについて

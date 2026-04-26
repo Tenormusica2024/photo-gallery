@@ -7,6 +7,9 @@ import { supabase, isConfigured } from "@/lib/supabase";
 import type { User } from "@supabase/supabase-js";
 
 // メニュー項目の単一ソース（デスクトップ・モバイル共通）
+// デモモード（isConfigured === false）では authRequired: true のリンクを非表示にする。
+// 理由: Supabase未接続時は認証・データ操作が不可能なため、
+// アクセスしても機能しないページへの導線を出さない設計判断。
 const NAV_LINKS = [
   { href: "/", label: "ギャラリー", authRequired: false },
   { href: "/profile", label: "アルバム", authRequired: true },
@@ -19,6 +22,7 @@ export default function Nav() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [signOutError, setSignOutError] = useState<string | null>(null);
 
   useEffect(() => {
     // Supabase未設定時はデモモードのため認証処理をスキップ
@@ -40,6 +44,8 @@ export default function Nav() {
   }, []);
 
   async function handleSignOut() {
+    setSignOutError(null);
+
     if (!isConfigured) {
       router.push("/login");
       return;
@@ -48,6 +54,7 @@ export default function Nav() {
     const { error } = await supabase.auth.signOut();
     if (error) {
       console.error("Sign out failed:", error);
+      setSignOutError("ログアウトに失敗しました。もう一度お試しください。");
       return;
     }
     router.push("/login");
@@ -141,6 +148,23 @@ export default function Nav() {
               </Link>
             )}
           </div>
+        </div>
+      )}
+
+      {/* ログアウト失敗時のインラインエラー */}
+      {signOutError && (
+        <div
+          role="alert"
+          className="absolute top-full left-0 right-0 bg-red-50 text-red-700 text-sm text-center py-2 border-b border-red-200"
+        >
+          {signOutError}
+          <button
+            onClick={() => setSignOutError(null)}
+            className="ml-3 text-red-500 hover:text-red-700 font-semibold"
+            aria-label="エラーを閉じる"
+          >
+            x
+          </button>
         </div>
       )}
     </nav>
